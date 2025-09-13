@@ -1,0 +1,131 @@
+-- ========================
+-- 1. Roles (Phân quyền người dùng)
+-- ========================
+CREATE TABLE Roles (
+    id INT PRIMARY KEY,
+    name NVARCHAR(20) UNIQUE NOT NULL -- 'admin', 'teacher', 'student'
+);
+
+-- ========================
+-- 2. Users
+-- ========================
+CREATE TABLE Users (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    username NVARCHAR(50) UNIQUE NOT NULL,
+    password NVARCHAR(255) NOT NULL,
+    email NVARCHAR(100) UNIQUE,
+    roleId INT,
+    createdAt DATETIME DEFAULT GETDATE(),
+    lastLogin DATETIME NULL,
+    FOREIGN KEY (roleId) REFERENCES Roles(id)
+);
+
+-- ========================
+-- 3. Subjects (Môn học)
+-- ========================
+CREATE TABLE Subjects (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    name NVARCHAR(100) NOT NULL,
+    description NVARCHAR(MAX) NULL
+);
+
+-- ========================
+-- 4. Topics (Chủ đề)
+-- ========================
+CREATE TABLE Topics (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    name NVARCHAR(50) NOT NULL,
+    subjectId INT,
+    FOREIGN KEY (subjectId) REFERENCES Subjects(id)
+);
+
+-- ========================
+-- 5. Difficulties (Mức độ)
+-- ========================
+CREATE TABLE Difficulties (
+    id INT PRIMARY KEY,
+    level NVARCHAR(20) UNIQUE NOT NULL -- 'Easy', 'Medium', 'Hard'
+);
+
+-- ========================
+-- 6. Questions (Câu hỏi)
+-- ========================
+CREATE TABLE Questions (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    content NVARCHAR(MAX) NOT NULL,
+    optionA NVARCHAR(255),
+    optionB NVARCHAR(255),
+    optionC NVARCHAR(255),
+    optionD NVARCHAR(255),
+    topicId INT,
+    difficultyId INT,
+    subjectId INT,
+    createdBy INT,
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (topicId) REFERENCES Topics(id),
+    FOREIGN KEY (difficultyId) REFERENCES Difficulties(id),
+    FOREIGN KEY (subjectId) REFERENCES Subjects(id),
+    FOREIGN KEY (createdBy) REFERENCES Users(id)
+);
+
+-- ========================
+-- 7. Question_CorrectAnswers (Đáp án đúng)
+-- ========================
+CREATE TABLE Question_CorrectAnswers (
+    questionId INT,
+    optionLabel CHAR(1), -- 'A', 'B', 'C', 'D'
+    PRIMARY KEY (questionId, optionLabel),
+    FOREIGN KEY (questionId) REFERENCES Questions(id)
+);
+
+-- ========================
+-- 8. Exams (Đề thi)
+-- ========================
+CREATE TABLE Exams (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    title NVARCHAR(100) NOT NULL,
+    duration INT NOT NULL, -- phút
+    subjectId INT,
+    createdBy INT,
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (subjectId) REFERENCES Subjects(id),
+    FOREIGN KEY (createdBy) REFERENCES Users(id)
+);
+
+-- ========================
+-- 9. Exam_Questions (Danh sách câu hỏi trong đề)
+-- ========================
+CREATE TABLE Exam_Questions (
+    examId INT,
+    questionId INT,
+    PRIMARY KEY (examId, questionId),
+    FOREIGN KEY (examId) REFERENCES Exams(id),
+    FOREIGN KEY (questionId) REFERENCES Questions(id)
+);
+
+-- ========================
+-- 10. ExamResults (Kết quả thi)
+-- ========================
+CREATE TABLE ExamResults (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    userId INT,
+    examId INT,
+    score FLOAT,
+    startTime DATETIME,
+    endTime DATETIME,
+    submittedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (userId) REFERENCES Users(id),
+    FOREIGN KEY (examId) REFERENCES Exams(id)
+);
+
+-- ========================
+-- 11. UserAnswers (Câu trả lời của thí sinh)
+-- ========================
+CREATE TABLE UserAnswers (
+    resultId INT,
+    questionId INT,
+    selectedOptions NVARCHAR(10), -- Ví dụ: 'A' hoặc 'BD'
+    PRIMARY KEY (resultId, questionId),
+    FOREIGN KEY (resultId) REFERENCES ExamResults(id),
+    FOREIGN KEY (questionId) REFERENCES Questions(id)
+);

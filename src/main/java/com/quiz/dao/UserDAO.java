@@ -38,6 +38,9 @@ public class UserDAO {
                 user.setRoleId(rs.getInt("roleId"));
                 user.setCreatedAt(rs.getTimestamp("createdAt").toLocalDateTime());
                 
+                // Debug log
+                System.out.println("DEBUG - UserDAO.login() - User ID: " + user.getId() + ", Username: " + user.getUsername());
+                
                 if (rs.getTimestamp("lastLogin") != null) {
                     user.setLastLogin(rs.getTimestamp("lastLogin").toLocalDateTime());
                 }

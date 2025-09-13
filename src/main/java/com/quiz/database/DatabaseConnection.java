@@ -24,19 +24,19 @@ public class DatabaseConnection {
         try (InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
                 System.err.println("Không tìm thấy file config.properties, sử dụng cấu hình mặc định");
-                DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true";
+                DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;useUnicode=true";
                 DB_USER = "admin";
                 DB_PASSWORD = "12345";
                 return;
             }
             
             props.load(input);
-            DB_URL = props.getProperty("db.url", "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true");
+            DB_URL = props.getProperty("db.url", "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;useUnicode=true");
             DB_USER = props.getProperty("db.username", "admin");
             DB_PASSWORD = props.getProperty("db.password", "12345");
         } catch (IOException e) {
             System.err.println("Lỗi đọc file config: " + e.getMessage());
-            DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true";
+            DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;useUnicode=true";
             DB_USER = "admin";
             DB_PASSWORD = "12345";
         }

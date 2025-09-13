@@ -134,10 +134,10 @@ public class MainFrame extends JFrame {
         tabbedPane.addTab("Quản lý chủ đề", new TopicManagementPanel());
         
         // Quản lý câu hỏi
-        tabbedPane.addTab("Quản lý câu hỏi", new QuestionManagementPanel());
+        tabbedPane.addTab("Quản lý câu hỏi", new QuestionManagementPanel(currentUser));
         
         // Quản lý đề thi
-        tabbedPane.addTab("Quản lý đề thi", new ExamManagementPanel());
+        tabbedPane.addTab("Quản lý đề thi", new ExamManagementPanel(currentUser));
         
         // Xem kết quả thi
         tabbedPane.addTab("Kết quả thi", new ExamResultPanel());
@@ -145,10 +145,10 @@ public class MainFrame extends JFrame {
 
     private void addTeacherTabs() {
         // Quản lý câu hỏi
-        tabbedPane.addTab("Quản lý câu hỏi", new QuestionManagementPanel());
+        tabbedPane.addTab("Quản lý câu hỏi", new QuestionManagementPanel(currentUser));
         
         // Quản lý đề thi
-        tabbedPane.addTab("Quản lý đề thi", new ExamManagementPanel());
+        tabbedPane.addTab("Quản lý đề thi", new ExamManagementPanel(currentUser));
         
         // Xem kết quả thi
         tabbedPane.addTab("Kết quả thi", new ExamResultPanel());
@@ -156,10 +156,10 @@ public class MainFrame extends JFrame {
 
     private void addStudentTabs() {
         // Danh sách đề thi
-        tabbedPane.addTab("Đề thi", new StudentExamPanel());
+        tabbedPane.addTab("Đề thi", new StudentExamPanel(currentUser));
         
         // Kết quả của tôi
-        tabbedPane.addTab("Kết quả của tôi", new MyExamResultPanel());
+        tabbedPane.addTab("Kết quả của tôi", new MyExamResultPanel(currentUser));
     }
 
     private void setupEventHandlers() {

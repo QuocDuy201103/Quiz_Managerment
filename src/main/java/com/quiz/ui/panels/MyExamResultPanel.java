@@ -2,6 +2,7 @@ package com.quiz.ui.panels;
 
 import com.quiz.dao.ExamResultDAO;
 import com.quiz.model.ExamResult;
+import com.quiz.model.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -17,9 +18,14 @@ public class MyExamResultPanel extends JPanel {
     private JButton refreshButton, viewDetailsButton;
     private ExamResultDAO examResultDAO;
     private List<ExamResult> myExamResults;
-    private int currentUserId = 1; // TODO: Get from current user session
+    private User currentUser;
 
     public MyExamResultPanel() {
+        this(null);
+    }
+
+    public MyExamResultPanel(User currentUser) {
+        this.currentUser = currentUser;
         examResultDAO = new ExamResultDAO();
         initializeComponents();
         setupLayout();
@@ -98,7 +104,11 @@ public class MyExamResultPanel extends JPanel {
     }
 
     private void loadMyExamResults() {
-        myExamResults = examResultDAO.getExamResultsByUser(currentUserId);
+        int userId = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
+        // Debug log
+        System.out.println("DEBUG - MyExamResultPanel.loadMyExamResults() - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
+        System.out.println("DEBUG - MyExamResultPanel.loadMyExamResults() - User ID: " + userId);
+        myExamResults = examResultDAO.getExamResultsByUser(userId);
         updateTable();
     }
 

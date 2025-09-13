@@ -3,6 +3,7 @@ package com.quiz.ui.panels;
 import com.quiz.dao.QuestionDAO;
 import com.quiz.dao.SubjectDAO;
 import com.quiz.dao.TopicDAO;
+import com.quiz.dao.DifficultyDAO;
 import com.quiz.model.*;
 
 import javax.swing.*;
@@ -25,12 +26,20 @@ public class QuestionManagementPanel extends JPanel {
     private QuestionDAO questionDAO;
     private SubjectDAO subjectDAO;
     private TopicDAO topicDAO;
+    private DifficultyDAO difficultyDAO;
     private List<Question> questions;
+    private User currentUser;
 
     public QuestionManagementPanel() {
+        this(null);
+    }
+    
+    public QuestionManagementPanel(User currentUser) {
+        this.currentUser = currentUser;
         questionDAO = new QuestionDAO();
         subjectDAO = new SubjectDAO();
         topicDAO = new TopicDAO();
+        difficultyDAO = new DifficultyDAO();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -63,10 +72,21 @@ public class QuestionManagementPanel extends JPanel {
         topicFilterCombo.addItem(new Topic(0, "Tất cả chủ đề", 0));
         
         difficultyFilterCombo = new JComboBox<>();
-        difficultyFilterCombo.addItem(new Difficulty(0, "Tất cả độ khó"));
-        difficultyFilterCombo.addItem(new Difficulty(1, "Easy"));
-        difficultyFilterCombo.addItem(new Difficulty(2, "Medium"));
-        difficultyFilterCombo.addItem(new Difficulty(3, "Hard"));
+        difficultyFilterCombo.addItem(new Difficulty(-1, "Tất cả độ khó"));
+        
+        // Load difficulties from database
+        try {
+            List<Difficulty> difficulties = difficultyDAO.getAllDifficulties();
+            for (Difficulty difficulty : difficulties) {
+                difficultyFilterCombo.addItem(difficulty);
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi load difficulties: " + e.getMessage());
+            // Fallback nếu có lỗi
+            difficultyFilterCombo.addItem(new Difficulty(0, "Easy"));
+            difficultyFilterCombo.addItem(new Difficulty(1, "Medium"));
+            difficultyFilterCombo.addItem(new Difficulty(2, "Hard"));
+        }
         
         // Load subjects
         List<Subject> subjects = subjectDAO.getAllSubjects();
@@ -183,13 +203,54 @@ public class QuestionManagementPanel extends JPanel {
     }
 
     private void filterQuestions() {
-        // Implement filtering logic here
-        updateTable();
+        String searchText = searchField.getText().toLowerCase();
+        Subject selectedSubject = (Subject) subjectFilterCombo.getSelectedItem();
+        Topic selectedTopic = (Topic) topicFilterCombo.getSelectedItem();
+        Difficulty selectedDifficulty = (Difficulty) difficultyFilterCombo.getSelectedItem();
+        
+        List<Question> filteredQuestions = new ArrayList<>();
+        
+        for (Question question : questions) {
+            boolean matches = true;
+            
+            // Search filter
+            if (!searchText.isEmpty()) {
+                matches = matches && question.getContent().toLowerCase().contains(searchText);
+            }
+            
+            // Subject filter
+            if (selectedSubject != null && selectedSubject.getId() > 0) {
+                matches = matches && question.getSubject() != null && 
+                         question.getSubject().getId() == selectedSubject.getId();
+            }
+            
+            // Topic filter
+            if (selectedTopic != null && selectedTopic.getId() > 0) {
+                matches = matches && question.getTopic() != null && 
+                         question.getTopic().getId() == selectedTopic.getId();
+            }
+            
+            // Difficulty filter
+            if (selectedDifficulty != null && selectedDifficulty.getId() > 0) {
+                matches = matches && question.getDifficulty() != null && 
+                         question.getDifficulty().getId() == selectedDifficulty.getId();
+            }
+            
+            if (matches) {
+                filteredQuestions.add(question);
+            }
+        }
+        
+        updateTable(filteredQuestions);
     }
 
     private void updateTable() {
+        updateTable(questions);
+    }
+    
+    private void updateTable(List<Question> questionsToShow) {
         tableModel.setRowCount(0);
-        for (Question question : questions) {
+        for (Question question : questionsToShow) {
             Object[] row = {
                 question.getId(),
                 question.getContent().length() > 50 ? question.getContent().substring(0, 50) + "..." : question.getContent(),
@@ -291,9 +352,20 @@ public class QuestionManagementPanel extends JPanel {
             
             // Difficulty combo
             difficultyCombo = new JComboBox<>();
-            difficultyCombo.addItem(new Difficulty(1, "Easy"));
-            difficultyCombo.addItem(new Difficulty(2, "Medium"));
-            difficultyCombo.addItem(new Difficulty(3, "Hard"));
+            
+            // Load difficulties from database
+            try {
+                List<Difficulty> difficulties = difficultyDAO.getAllDifficulties();
+                for (Difficulty difficulty : difficulties) {
+                    difficultyCombo.addItem(difficulty);
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi load difficulties in dialog: " + e.getMessage());
+                // Fallback nếu có lỗi
+                difficultyCombo.addItem(new Difficulty(0, "Easy"));
+                difficultyCombo.addItem(new Difficulty(1, "Medium"));
+                difficultyCombo.addItem(new Difficulty(2, "Hard"));
+            }
             
             // Correct answer checkboxes
             correctA = new JCheckBox("A");
@@ -463,6 +535,64 @@ public class QuestionManagementPanel extends JPanel {
             setResizable(false);
             pack();
             setLocationRelativeTo(getParent());
+            
+            // Load existing question data if editing
+            if (question != null) {
+                loadQuestionData();
+            }
+        }
+        
+        private void loadQuestionData() {
+            if (question == null) return;
+            
+            // Load basic data
+            contentArea.setText(question.getContent());
+            optionAField.setText(question.getOptionA());
+            optionBField.setText(question.getOptionB());
+            optionCField.setText(question.getOptionC());
+            optionDField.setText(question.getOptionD());
+            
+            // Load subject
+            if (question.getSubject() != null) {
+                for (int i = 0; i < subjectCombo.getItemCount(); i++) {
+                    Subject subject = subjectCombo.getItemAt(i);
+                    if (subject.getId() == question.getSubjectId()) {
+                        subjectCombo.setSelectedItem(subject);
+                        break;
+                    }
+                }
+            }
+            
+            // Load topic (after subject is selected)
+            updateTopicCombo(question.getSubjectId());
+            if (question.getTopic() != null) {
+                for (int i = 0; i < topicCombo.getItemCount(); i++) {
+                    Topic topic = topicCombo.getItemAt(i);
+                    if (topic.getId() == question.getTopicId()) {
+                        topicCombo.setSelectedItem(topic);
+                        break;
+                    }
+                }
+            }
+            
+            // Load difficulty
+            if (question.getDifficulty() != null) {
+                for (int i = 0; i < difficultyCombo.getItemCount(); i++) {
+                    Difficulty difficulty = difficultyCombo.getItemAt(i);
+                    if (difficulty.getId() == question.getDifficultyId()) {
+                        difficultyCombo.setSelectedItem(difficulty);
+                        break;
+                    }
+                }
+            }
+            
+            // Load correct answers
+            if (question.getCorrectAnswers() != null) {
+                correctA.setSelected(question.getCorrectAnswers().contains("A"));
+                correctB.setSelected(question.getCorrectAnswers().contains("B"));
+                correctC.setSelected(question.getCorrectAnswers().contains("C"));
+                correctD.setSelected(question.getCorrectAnswers().contains("D"));
+            }
         }
 
         private void saveQuestion() {
@@ -500,8 +630,14 @@ public class QuestionManagementPanel extends JPanel {
             boolean success;
             if (question == null) {
                 // Add new question
+                int createdBy = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
+                
+                // Debug log
+                System.out.println("DEBUG - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
+                System.out.println("DEBUG - CreatedBy ID: " + createdBy);
+                
                 Question newQuestion = new Question(content, optionA, optionB, optionC, optionD,
-                    selectedTopic.getId(), selectedDifficulty.getId(), selectedSubject.getId(), 1); // TODO: Get current user ID
+                    selectedTopic.getId(), selectedDifficulty.getId(), selectedSubject.getId(), createdBy);
                 success = questionDAO.addQuestion(newQuestion, correctAnswers);
             } else {
                 // Update existing question
@@ -513,6 +649,13 @@ public class QuestionManagementPanel extends JPanel {
                 question.setTopicId(selectedTopic.getId());
                 question.setDifficultyId(selectedDifficulty.getId());
                 question.setSubjectId(selectedSubject.getId());
+                
+                // Debug log
+                System.out.println("DEBUG - Update Question - ID: " + question.getId());
+                System.out.println("DEBUG - Update Question - Difficulty ID: " + selectedDifficulty.getId() + " (" + selectedDifficulty.getLevel() + ")");
+                System.out.println("DEBUG - Update Question - Topic ID: " + selectedTopic.getId());
+                System.out.println("DEBUG - Update Question - Subject ID: " + selectedSubject.getId());
+                
                 success = questionDAO.updateQuestion(question, correctAnswers);
             }
             

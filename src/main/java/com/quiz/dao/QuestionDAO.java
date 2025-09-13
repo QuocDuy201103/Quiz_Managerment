@@ -74,6 +74,9 @@ public class QuestionDAO {
         String sql = "INSERT INTO Questions (content, optionA, optionB, optionC, optionD, " +
                     "topicId, difficultyId, subjectId, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
+        // Debug log
+        System.out.println("DEBUG - QuestionDAO.addQuestion() - CreatedBy: " + question.getCreatedBy());
+        
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, question.getContent());
             stmt.setString(2, question.getOptionA());
@@ -104,6 +107,12 @@ public class QuestionDAO {
     public boolean updateQuestion(Question question, List<String> correctAnswers) {
         String sql = "UPDATE Questions SET content = ?, optionA = ?, optionB = ?, optionC = ?, optionD = ?, " +
                     "topicId = ?, difficultyId = ?, subjectId = ? WHERE id = ?";
+        
+        // Debug log
+        System.out.println("DEBUG - QuestionDAO.updateQuestion() - ID: " + question.getId());
+        System.out.println("DEBUG - QuestionDAO.updateQuestion() - Difficulty ID: " + question.getDifficultyId());
+        System.out.println("DEBUG - QuestionDAO.updateQuestion() - Topic ID: " + question.getTopicId());
+        System.out.println("DEBUG - QuestionDAO.updateQuestion() - Subject ID: " + question.getSubjectId());
         
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, question.getContent());

@@ -13,6 +13,7 @@ public class Main {
         // Thiết lập Look and Feel hiện đại
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
+            // new FlatLightLaf();
         } catch (Exception e) {
             e.printStackTrace();
         }

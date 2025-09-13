@@ -24,8 +24,14 @@ public class ExamManagementPanel extends JPanel {
     private SubjectDAO subjectDAO;
     private QuestionDAO questionDAO;
     private List<Exam> exams;
+    private User currentUser;
 
     public ExamManagementPanel() {
+        this(null);
+    }
+
+    public ExamManagementPanel(User currentUser) {
+        this.currentUser = currentUser;
         examDAO = new ExamDAO();
         subjectDAO = new SubjectDAO();
         questionDAO = new QuestionDAO();
@@ -398,7 +404,11 @@ public class ExamManagementPanel extends JPanel {
             boolean success;
             if (exam == null) {
                 // Add new exam
-                Exam newExam = new Exam(title, duration, selectedSubject.getId(), 1); // TODO: Get current user ID
+                int createdBy = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
+                // Debug log
+                System.out.println("DEBUG - ExamManagementPanel.saveExam() - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
+                System.out.println("DEBUG - ExamManagementPanel.saveExam() - CreatedBy ID: " + createdBy);
+                Exam newExam = new Exam(title, duration, selectedSubject.getId(), createdBy);
                 success = examDAO.addExam(newExam, questionIds);
             } else {
                 // Update existing exam

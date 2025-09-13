@@ -24,6 +24,7 @@ public class ExamTakingFrame extends JFrame {
     private Timer timer;
     private int timeRemaining; // in seconds
     private QuestionDAO questionDAO;
+    private User currentUser;
     
     // UI Components
     private JLabel questionNumberLabel, timeLabel, questionContentLabel;
@@ -34,7 +35,12 @@ public class ExamTakingFrame extends JFrame {
     private JProgressBar progressBar;
 
     public ExamTakingFrame(Exam exam) {
+        this(exam, null);
+    }
+
+    public ExamTakingFrame(Exam exam, User currentUser) {
         this.exam = exam;
+        this.currentUser = currentUser;
         this.questions = exam.getQuestions();
         this.userAnswers = new ArrayList<>();
         this.startTime = LocalDateTime.now();
@@ -309,7 +315,11 @@ public class ExamTakingFrame extends JFrame {
         
         // Save exam result
         ExamResultDAO examResultDAO = new ExamResultDAO();
-        ExamResult result = new ExamResult(1, exam.getId(), startTime); // TODO: Get current user ID
+        int userId = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
+        // Debug log
+        System.out.println("DEBUG - ExamTakingFrame.submitExam() - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
+        System.out.println("DEBUG - ExamTakingFrame.submitExam() - User ID: " + userId);
+        ExamResult result = new ExamResult(userId, exam.getId(), startTime);
         result.setEndTime(LocalDateTime.now());
         result.setScore(score);
         

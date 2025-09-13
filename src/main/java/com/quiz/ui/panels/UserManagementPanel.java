@@ -202,9 +202,20 @@ public class UserManagementPanel extends JPanel {
             
             // Role combo box
             roleComboBox = new JComboBox<>();
-            roleComboBox.addItem(new Role(1, "admin"));
-            roleComboBox.addItem(new Role(2, "teacher"));
-            roleComboBox.addItem(new Role(3, "student"));
+            
+            // Load roles from database
+            try {
+                List<Role> roles = userDAO.getAllRoles();
+                for (Role role : roles) {
+                    roleComboBox.addItem(role);
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi load roles in UserManagementPanel: " + e.getMessage());
+                // Fallback nếu có lỗi
+                roleComboBox.addItem(new Role(0, "admin"));
+                roleComboBox.addItem(new Role(1, "teacher"));
+                roleComboBox.addItem(new Role(2, "student"));
+            }
             
             saveButton = new JButton("Lưu");
             cancelButton = new JButton("Hủy");

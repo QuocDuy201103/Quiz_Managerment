@@ -2,6 +2,7 @@ package com.quiz.ui.panels;
 
 import com.quiz.dao.ExamDAO;
 import com.quiz.model.Exam;
+import com.quiz.model.User;
 import com.quiz.ui.ExamTakingFrame;
 
 import javax.swing.*;
@@ -19,8 +20,14 @@ public class StudentExamPanel extends JPanel {
     private JButton startExamButton, refreshButton;
     private ExamDAO examDAO;
     private List<Exam> exams;
+    private User currentUser;
 
     public StudentExamPanel() {
+        this(null);
+    }
+
+    public StudentExamPanel(User currentUser) {
+        this.currentUser = currentUser;
         examDAO = new ExamDAO();
         initializeComponents();
         setupLayout();
@@ -140,7 +147,7 @@ public class StudentExamPanel extends JPanel {
         
         if (option == JOptionPane.YES_OPTION) {
             // Mở giao diện thi
-            ExamTakingFrame examFrame = new ExamTakingFrame(examWithQuestions);
+            ExamTakingFrame examFrame = new ExamTakingFrame(examWithQuestions, currentUser);
             examFrame.setVisible(true);
         }
     }
