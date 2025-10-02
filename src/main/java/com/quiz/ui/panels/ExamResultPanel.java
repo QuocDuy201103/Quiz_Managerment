@@ -46,18 +46,13 @@ public class ExamResultPanel extends JPanel {
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         
         // Buttons
-        refreshButton = new JButton("Làm mới");
-        viewDetailsButton = new JButton("Xem chi tiết");
+        refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
+        viewDetailsButton = new JButton("Xem chi tiết", com.quiz.ui.IconUtil.load("/images/exam-results.png", 16, 16));
         
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         refreshButton.setFont(buttonFont);
         viewDetailsButton.setFont(buttonFont);
-        
-        // Thiết lập màu sắc cho buttons
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
-        viewDetailsButton.setBackground(new Color(0, 123, 255));
-        viewDetailsButton.setForeground(Color.WHITE);
+
     }
 
     private void setupLayout() {

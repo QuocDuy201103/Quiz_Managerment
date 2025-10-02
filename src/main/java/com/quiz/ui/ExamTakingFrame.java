@@ -5,6 +5,8 @@ import com.quiz.dao.QuestionDAO;
 import com.quiz.model.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.KeyStroke;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -61,11 +63,11 @@ public class ExamTakingFrame extends JFrame {
         timeLabel = new JLabel();
         questionContentLabel = new JLabel();
         
-        Font labelFont = new Font("Segoe UI", Font.PLAIN, 14);
+        Font labelFont = new Font("Segoe UI", Font.PLAIN, 16);
         questionNumberLabel.setFont(labelFont);
-        timeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        timeLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         timeLabel.setForeground(Color.RED);
-        questionContentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        questionContentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         
         // Radio buttons
         optionA = new JRadioButton();
@@ -79,7 +81,7 @@ public class ExamTakingFrame extends JFrame {
         optionGroup.add(optionC);
         optionGroup.add(optionD);
         
-        Font optionFont = new Font("Segoe UI", Font.PLAIN, 12);
+        Font optionFont = new Font("Segoe UI", Font.PLAIN, 14);
         optionA.setFont(optionFont);
         optionB.setFont(optionFont);
         optionC.setFont(optionFont);
@@ -90,18 +92,18 @@ public class ExamTakingFrame extends JFrame {
         nextButton = new JButton("Câu tiếp theo");
         submitButton = new JButton("Nộp bài");
         
-        Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
+        Font buttonFont = new Font("Segoe UI", Font.PLAIN, 14);
         previousButton.setFont(buttonFont);
         nextButton.setFont(buttonFont);
         submitButton.setFont(buttonFont);
         
-        // Button colors
-        previousButton.setBackground(new Color(108, 117, 125));
-        previousButton.setForeground(Color.WHITE);
-        nextButton.setBackground(new Color(0, 123, 255));
-        nextButton.setForeground(Color.WHITE);
-        submitButton.setBackground(new Color(220, 53, 69));
-        submitButton.setForeground(Color.WHITE);
+        // Button colors (app style)
+        com.quiz.ui.StyleUtil.secondary(previousButton);
+        com.quiz.ui.StyleUtil.primary(nextButton);
+        com.quiz.ui.StyleUtil.danger(submitButton);
+        com.quiz.ui.StyleUtil.square(previousButton);
+        com.quiz.ui.StyleUtil.square(nextButton);
+        com.quiz.ui.StyleUtil.square(submitButton);
         
         // Progress bar
         progressBar = new JProgressBar(0, questions.size());
@@ -113,33 +115,33 @@ public class ExamTakingFrame extends JFrame {
         
         // Top panel - Question number and time
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        topPanel.setBackground(new Color(240, 240, 240));
+        topPanel.setBorder(new EmptyBorder(10, 14, 10, 14));
+        topPanel.setBackground(new Color(245, 245, 248));
         
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         leftPanel.add(questionNumberLabel);
-        leftPanel.setBackground(new Color(240, 240, 240));
+        leftPanel.setBackground(topPanel.getBackground());
         
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         rightPanel.add(timeLabel);
-        rightPanel.setBackground(new Color(240, 240, 240));
+        rightPanel.setBackground(topPanel.getBackground());
         
         topPanel.add(leftPanel, BorderLayout.WEST);
         topPanel.add(rightPanel, BorderLayout.EAST);
         
         // Progress bar
         JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        progressPanel.setBorder(new EmptyBorder(0, 14, 10, 14));
         progressPanel.add(progressBar, BorderLayout.CENTER);
         
         // Center panel - Question and options
         questionPanel = new JPanel(new BorderLayout());
-        questionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        questionPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         
         JPanel questionContentPanel = new JPanel(new BorderLayout());
         questionContentPanel.add(questionContentLabel, BorderLayout.NORTH);
         
-        JPanel optionsPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        JPanel optionsPanel = new JPanel(new GridLayout(4, 1, 16, 16));
         optionsPanel.add(optionA);
         optionsPanel.add(optionB);
         optionsPanel.add(optionC);
@@ -150,15 +152,19 @@ public class ExamTakingFrame extends JFrame {
         
         // Bottom panel - Navigation buttons
         buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buttonPanel.setBorder(new EmptyBorder(12, 12, 12, 12));
         buttonPanel.add(previousButton);
         buttonPanel.add(nextButton);
         buttonPanel.add(Box.createHorizontalStrut(50));
         buttonPanel.add(submitButton);
         
+        // Center area contains progress + question
+        JPanel center = new JPanel(new BorderLayout());
+        center.add(progressPanel, BorderLayout.NORTH);
+        center.add(questionPanel, BorderLayout.CENTER);
+
         add(topPanel, BorderLayout.NORTH);
-        add(progressPanel, BorderLayout.CENTER);
-        add(questionPanel, BorderLayout.CENTER);
+        add(center, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
@@ -182,6 +188,20 @@ public class ExamTakingFrame extends JFrame {
                     submitExam();
                 }
             }
+        });
+
+        // Keyboard navigation
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(KeyStroke.getKeyStroke("RIGHT"), "next");
+        getRootPane().getActionMap().put("next", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { if (nextButton.isEnabled()) nextQuestion(); }
+        });
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(KeyStroke.getKeyStroke("LEFT"), "prev");
+        getRootPane().getActionMap().put("prev", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { if (previousButton.isEnabled()) previousQuestion(); }
         });
     }
 
@@ -216,6 +236,11 @@ public class ExamTakingFrame extends JFrame {
         int minutes = timeRemaining / 60;
         int seconds = timeRemaining % 60;
         timeLabel.setText(String.format("Thời gian còn lại: %02d:%02d", minutes, seconds));
+        if (timeRemaining <= 60) {
+            timeLabel.setForeground(new Color(220, 53, 69));
+        } else {
+            timeLabel.setForeground(new Color(40, 167, 69));
+        }
     }
 
     private void showQuestion(int index) {

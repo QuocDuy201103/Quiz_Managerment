@@ -95,10 +95,10 @@ public class QuestionManagementPanel extends JPanel {
         }
         
         // Buttons
-        addButton = new JButton("Thêm mới");
-        editButton = new JButton("Sửa");
-        deleteButton = new JButton("Xóa");
-        refreshButton = new JButton("Làm mới");
+        addButton = new JButton("Thêm mới", com.quiz.ui.IconUtil.load("/images/add.png", 16, 16));
+        editButton = new JButton("Sửa", com.quiz.ui.IconUtil.load("/images/edit.png", 16, 16));
+        deleteButton = new JButton("Xóa", com.quiz.ui.IconUtil.load("/images/delete.png", 16, 16));
+        refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
         
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         addButton.setFont(buttonFont);
@@ -106,15 +106,6 @@ public class QuestionManagementPanel extends JPanel {
         deleteButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
         
-        // Thiết lập màu sắc cho buttons
-        addButton.setBackground(new Color(40, 167, 69));
-        addButton.setForeground(Color.WHITE);
-        editButton.setBackground(new Color(255, 193, 7));
-        editButton.setForeground(Color.BLACK);
-        deleteButton.setBackground(new Color(220, 53, 69));
-        deleteButton.setForeground(Color.WHITE);
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
     }
 
     private void setupLayout() {
@@ -391,12 +382,6 @@ public class QuestionManagementPanel extends JPanel {
             correctD.setFont(font);
             saveButton.setFont(font);
             cancelButton.setFont(font);
-            
-            // Thiết lập màu sắc
-            saveButton.setBackground(new Color(40, 167, 69));
-            saveButton.setForeground(Color.WHITE);
-            cancelButton.setBackground(new Color(108, 117, 125));
-            cancelButton.setForeground(Color.WHITE);
             
             // Nếu là edit mode, điền thông tin
             if (question != null) {

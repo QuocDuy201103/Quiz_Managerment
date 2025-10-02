@@ -21,10 +21,13 @@ public class ExamDAO {
     // Lấy tất cả đề thi
     public List<Exam> getAllExams() {
         List<Exam> exams = new ArrayList<>();
-        String sql = "SELECT e.*, s.name as subjectName, u.username as createdByUsername " +
+        String sql = "SELECT e.*, s.name as subjectName, u.username as createdByUsername, " +
+                    "COUNT(eq.questionId) as questionCount " +
                     "FROM Exams e " +
                     "LEFT JOIN Subjects s ON e.subjectId = s.id " +
                     "LEFT JOIN Users u ON e.createdBy = u.id " +
+                    "LEFT JOIN Exam_Questions eq ON e.id = eq.examId " +
+                    "GROUP BY e.id, e.title, e.duration, e.subjectId, e.createdBy, e.createdAt, s.name, u.username " +
                     "ORDER BY e.createdAt DESC";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql);
@@ -32,6 +35,9 @@ public class ExamDAO {
             
             while (rs.next()) {
                 Exam exam = mapResultSetToExam(rs);
+                // Set question count from the query result
+                int questionCount = rs.getInt("questionCount");
+                exam.setQuestionCount(questionCount);
                 exams.add(exam);
             }
         } catch (SQLException e) {
@@ -113,16 +119,47 @@ public class ExamDAO {
 
     // Xóa đề thi
     public boolean deleteExam(int examId) {
-        // Xóa câu hỏi trong đề thi trước
-        deleteExamQuestions(examId);
-        
-        String sql = "DELETE FROM Exams WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, examId);
-            return stmt.executeUpdate() > 0;
+        try {
+            // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
+            connection.setAutoCommit(false);
+            
+            // 1. Xóa UserAnswers liên quan đến ExamResults của đề thi này
+            deleteUserAnswersByExamId(examId);
+            
+            // 2. Xóa ExamResults liên quan đến đề thi này
+            deleteExamResultsByExamId(examId);
+            
+            // 3. Xóa câu hỏi trong đề thi
+            deleteExamQuestions(examId);
+            
+            // 4. Cuối cùng xóa đề thi
+            String sql = "DELETE FROM Exams WHERE id = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, examId);
+                int affectedRows = stmt.executeUpdate();
+                
+                if (affectedRows > 0) {
+                    connection.commit();
+                    return true;
+                } else {
+                    connection.rollback();
+                    return false;
+                }
+            }
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
             e.printStackTrace();
             return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -208,6 +245,30 @@ public class ExamDAO {
     // Xóa câu hỏi khỏi đề thi
     private void deleteExamQuestions(int examId) {
         String sql = "DELETE FROM Exam_Questions WHERE examId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, examId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Xóa UserAnswers liên quan đến ExamResults của đề thi
+    private void deleteUserAnswersByExamId(int examId) {
+        String sql = "DELETE ua FROM UserAnswers ua " +
+                    "INNER JOIN ExamResults er ON ua.resultId = er.id " +
+                    "WHERE er.examId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, examId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Xóa ExamResults liên quan đến đề thi
+    private void deleteExamResultsByExamId(int examId) {
+        String sql = "DELETE FROM ExamResults WHERE examId = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, examId);
             stmt.executeUpdate();

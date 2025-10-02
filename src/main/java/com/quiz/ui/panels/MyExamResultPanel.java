@@ -54,12 +54,6 @@ public class MyExamResultPanel extends JPanel {
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         refreshButton.setFont(buttonFont);
         viewDetailsButton.setFont(buttonFont);
-        
-        // Thiết lập màu sắc cho buttons
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
-        viewDetailsButton.setBackground(new Color(0, 123, 255));
-        viewDetailsButton.setForeground(Color.WHITE);
     }
 
     private void setupLayout() {

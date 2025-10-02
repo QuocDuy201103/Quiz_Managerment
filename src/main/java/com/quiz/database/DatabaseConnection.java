@@ -23,7 +23,7 @@ public class DatabaseConnection {
         Properties props = new Properties();
         try (InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
-                System.err.println("Không tìm thấy file config.properties, sử dụng cấu hình mặc định");
+                System.err.println("Cannot find file config.properties, use default config");
                 DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;useUnicode=true";
                 DB_USER = "admin";
                 DB_PASSWORD = "12345";
@@ -35,7 +35,7 @@ public class DatabaseConnection {
             DB_USER = props.getProperty("db.username", "admin");
             DB_PASSWORD = props.getProperty("db.password", "12345");
         } catch (IOException e) {
-            System.err.println("Lỗi đọc file config: " + e.getMessage());
+            System.err.println("Error read file config: " + e.getMessage());
             DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=quanlytracnghiem;encrypt=false;trustServerCertificate=true;characterEncoding=UTF-8;useUnicode=true";
             DB_USER = "admin";
             DB_PASSWORD = "12345";
@@ -49,9 +49,9 @@ public class DatabaseConnection {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            System.out.println("Kết nối database thành công!");
+            System.out.println("Connect database successfully!");
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Lỗi kết nối database: " + e.getMessage());
+            System.err.println("Error connect to database: " + e.getMessage());
             e.printStackTrace();
         }
     }

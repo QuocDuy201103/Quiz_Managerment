@@ -19,7 +19,7 @@ public class ExamManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField searchField;
     private JComboBox<Subject> subjectFilterCombo;
-    private JButton addButton, editButton, deleteButton, refreshButton, viewButton;
+    private JButton addButton, editButton, deleteButton, refreshButton, viewButton, exportButton;
     private ExamDAO examDAO;
     private SubjectDAO subjectDAO;
     private QuestionDAO questionDAO;
@@ -68,11 +68,12 @@ public class ExamManagementPanel extends JPanel {
         }
         
         // Buttons
-        addButton = new JButton("Thêm mới");
-        editButton = new JButton("Sửa");
-        deleteButton = new JButton("Xóa");
-        viewButton = new JButton("Xem chi tiết");
-        refreshButton = new JButton("Làm mới");
+        addButton = new JButton("Thêm mới", com.quiz.ui.IconUtil.load("/images/add.png", 16, 16));
+        editButton = new JButton("Sửa", com.quiz.ui.IconUtil.load("/images/edit.png", 16, 16));
+        deleteButton = new JButton("Xóa", com.quiz.ui.IconUtil.load("/images/delete.png", 16, 16));
+        viewButton = new JButton("Xem chi tiết", com.quiz.ui.IconUtil.load("/images/exam.png", 16, 16));
+        exportButton = new JButton("Xuất đề", com.quiz.ui.IconUtil.load("/images/exam.png", 16, 16));
+        refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
         
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         addButton.setFont(buttonFont);
@@ -80,18 +81,7 @@ public class ExamManagementPanel extends JPanel {
         deleteButton.setFont(buttonFont);
         viewButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
-        
-        // Thiết lập màu sắc cho buttons
-        addButton.setBackground(new Color(40, 167, 69));
-        addButton.setForeground(Color.WHITE);
-        editButton.setBackground(new Color(255, 193, 7));
-        editButton.setForeground(Color.BLACK);
-        deleteButton.setBackground(new Color(220, 53, 69));
-        deleteButton.setForeground(Color.WHITE);
-        viewButton.setBackground(new Color(0, 123, 255));
-        viewButton.setForeground(Color.WHITE);
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
+        exportButton.setFont(buttonFont);
     }
 
     private void setupLayout() {
@@ -112,6 +102,7 @@ public class ExamManagementPanel extends JPanel {
         buttonPanel.add(editButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(viewButton);
+        buttonPanel.add(exportButton);
         buttonPanel.add(refreshButton);
         
         // North panel
@@ -133,6 +124,7 @@ public class ExamManagementPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteSelectedExam());
         viewButton.addActionListener(e -> viewExamDetails());
         refreshButton.addActionListener(e -> loadExams());
+        exportButton.addActionListener(e -> exportSelectedExam());
         
         // Subject filter change
         subjectFilterCombo.addActionListener(e -> filterExams());
@@ -161,17 +153,58 @@ public class ExamManagementPanel extends JPanel {
     private void updateTable() {
         tableModel.setRowCount(0);
         for (Exam exam : exams) {
-            int questionCount = exam.getQuestions() != null ? exam.getQuestions().size() : 0;
             Object[] row = {
                 exam.getId(),
                 exam.getTitle(),
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
                 exam.getDuration(),
-                questionCount,
+                exam.getQuestionCount(),
                 exam.getCreatedByUser() != null ? exam.getCreatedByUser().getUsername() : "N/A",
                 exam.getCreatedAt().toString().substring(0, 19)
             };
             tableModel.addRow(row);
+        }
+    }
+
+    private void exportSelectedExam() {
+        int selectedRow = examTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn đề thi cần xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Exam selectedExam = exams.get(selectedRow);
+        Exam examWithQuestions = examDAO.getExamById(selectedExam.getId());
+        if (examWithQuestions == null || examWithQuestions.getQuestions() == null || examWithQuestions.getQuestions().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Đề thi không có câu hỏi để xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Chọn nơi lưu file đề thi (.txt)");
+        chooser.setSelectedFile(new java.io.File(examWithQuestions.getTitle().replaceAll("[^a-zA-Z0-9\\- ]", "_") + ".txt"));
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = chooser.getSelectedFile();
+            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
+                out.println("ĐỀ THI: " + examWithQuestions.getTitle());
+                out.println("Môn học: " + (examWithQuestions.getSubject() != null ? examWithQuestions.getSubject().getName() : "N/A"));
+                out.println("Thời gian: " + examWithQuestions.getDuration() + " phút");
+                out.println();
+                int idx = 1;
+                for (com.quiz.model.Question q : examWithQuestions.getQuestions()) {
+                    out.println(String.format("Câu %d: %s", idx++, q.getContent()));
+                    out.println("A. " + q.getOptionA());
+                    out.println("B. " + q.getOptionB());
+                    out.println("C. " + q.getOptionC());
+                    out.println("D. " + q.getOptionD());
+                    out.println();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file đề thi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            JOptionPane.showMessageDialog(this, "Xuất đề thi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -282,12 +315,6 @@ public class ExamManagementPanel extends JPanel {
             questionList.setFont(font);
             saveButton.setFont(font);
             cancelButton.setFont(font);
-            
-            // Thiết lập màu sắc
-            saveButton.setBackground(new Color(40, 167, 69));
-            saveButton.setForeground(Color.WHITE);
-            cancelButton.setBackground(new Color(108, 117, 125));
-            cancelButton.setForeground(Color.WHITE);
             
             // Load questions
             loadQuestions();

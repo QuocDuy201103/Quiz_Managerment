@@ -18,6 +18,7 @@ public class Exam {
     private Subject subject;
     private User createdByUser;
     private List<Question> questions;
+    private int questionCount; // Số lượng câu hỏi trong đề thi
 
     public Exam() {}
 
@@ -99,6 +100,14 @@ public class Exam {
 
     public void setQuestions(List<Question> questions) {
         this.questions = questions;
+    }
+
+    public int getQuestionCount() {
+        return questionCount;
+    }
+
+    public void setQuestionCount(int questionCount) {
+        this.questionCount = questionCount;
     }
 
     @Override

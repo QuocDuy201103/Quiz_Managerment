@@ -51,26 +51,17 @@ public class UserManagementPanel extends JPanel {
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         
         // Buttons
-        addButton = new JButton("Thêm mới");
-        editButton = new JButton("Sửa");
-        deleteButton = new JButton("Xóa");
-        refreshButton = new JButton("Làm mới");
+        addButton = new JButton("Thêm mới", com.quiz.ui.IconUtil.load("/images/add.png", 16, 16));
+        editButton = new JButton("Sửa", com.quiz.ui.IconUtil.load("/images/edit.png", 16, 16));
+        deleteButton = new JButton("Xóa", com.quiz.ui.IconUtil.load("/images/delete.png", 16, 16));
+        refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
         
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         addButton.setFont(buttonFont);
         editButton.setFont(buttonFont);
         deleteButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
-        
-        // Thiết lập màu sắc cho buttons
-        addButton.setBackground(new Color(40, 167, 69));
-        addButton.setForeground(Color.WHITE);
-        editButton.setBackground(new Color(255, 193, 7));
-        editButton.setForeground(Color.BLACK);
-        deleteButton.setBackground(new Color(220, 53, 69));
-        deleteButton.setForeground(Color.WHITE);
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
+
     }
 
     private void setupLayout() {
@@ -217,8 +208,8 @@ public class UserManagementPanel extends JPanel {
                 roleComboBox.addItem(new Role(2, "student"));
             }
             
-            saveButton = new JButton("Lưu");
-            cancelButton = new JButton("Hủy");
+            saveButton = new JButton("Lưu", com.quiz.ui.IconUtil.load("/images/add.png", 16, 16));
+            cancelButton = new JButton("Hủy", com.quiz.ui.IconUtil.load("/images/delete.png", 16, 16));
             
             Font font = new Font("Segoe UI", Font.PLAIN, 12);
             usernameField.setFont(font);
@@ -228,11 +219,6 @@ public class UserManagementPanel extends JPanel {
             saveButton.setFont(font);
             cancelButton.setFont(font);
             
-            // Thiết lập màu sắc
-            saveButton.setBackground(new Color(40, 167, 69));
-            saveButton.setForeground(Color.WHITE);
-            cancelButton.setBackground(new Color(108, 117, 125));
-            cancelButton.setForeground(Color.WHITE);
             
             // Nếu là edit mode, điền thông tin
             if (user != null) {

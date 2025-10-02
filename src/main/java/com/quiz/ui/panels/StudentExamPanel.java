@@ -54,18 +54,12 @@ public class StudentExamPanel extends JPanel {
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         
         // Buttons
-        startExamButton = new JButton("Bắt đầu thi");
-        refreshButton = new JButton("Làm mới");
+        startExamButton = new JButton("Bắt đầu thi", com.quiz.ui.IconUtil.load("/images/exam.png", 16, 16));
+        refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
         
         Font buttonFont = new Font("Segoe UI", Font.PLAIN, 12);
         startExamButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
-        
-        // Thiết lập màu sắc cho buttons
-        startExamButton.setBackground(new Color(40, 167, 69));
-        startExamButton.setForeground(Color.WHITE);
-        refreshButton.setBackground(new Color(108, 117, 125));
-        refreshButton.setForeground(Color.WHITE);
     }
 
     private void setupLayout() {
@@ -111,13 +105,12 @@ public class StudentExamPanel extends JPanel {
     private void updateTable() {
         tableModel.setRowCount(0);
         for (Exam exam : exams) {
-            int questionCount = exam.getQuestions() != null ? exam.getQuestions().size() : 0;
             Object[] row = {
                 exam.getId(),
                 exam.getTitle(),
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
                 exam.getDuration(),
-                questionCount,
+                exam.getQuestionCount(),
                 exam.getCreatedAt().toString().substring(0, 19)
             };
             tableModel.addRow(row);
