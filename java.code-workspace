@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "java",
+			"path": "."
+		},
+		{
+			"name": "Quiz_Managerment",
+			"path": "../Quiz_Managerment"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
+}
