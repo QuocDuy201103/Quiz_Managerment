@@ -4,6 +4,7 @@ import com.quiz.dao.ExamDAO;
 import com.quiz.model.Exam;
 import com.quiz.model.User;
 import com.quiz.ui.ExamTakingFrame;
+import com.quiz.ui.QuizModeSelector;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -139,9 +140,34 @@ public class StudentExamPanel extends JPanel {
             "Xác nhận bắt đầu thi", JOptionPane.YES_NO_OPTION);
         
         if (option == JOptionPane.YES_OPTION) {
-            // Mở giao diện thi
-            ExamTakingFrame examFrame = new ExamTakingFrame(examWithQuestions, currentUser);
-            examFrame.setVisible(true);
+            // Show quiz mode selector
+            QuizModeSelector.QuizMode selectedMode = QuizModeSelector.showModeSelector(
+                (JFrame) SwingUtilities.getWindowAncestor(this), 
+                examWithQuestions, 
+                currentUser
+            );
+            
+            if (selectedMode != null) {
+                // Create exam frame with selected mode
+                ExamTakingFrame.QuizMode mode = convertToExamMode(selectedMode);
+                ExamTakingFrame examFrame = new ExamTakingFrame(examWithQuestions, currentUser, mode);
+                examFrame.setVisible(true);
+            }
+        }
+    }
+    
+    private ExamTakingFrame.QuizMode convertToExamMode(QuizModeSelector.QuizMode mode) {
+        switch (mode) {
+            case EASY:
+                return ExamTakingFrame.QuizMode.EASY;
+            case MEDIUM:
+                return ExamTakingFrame.QuizMode.MEDIUM;
+            case HARD:
+                return ExamTakingFrame.QuizMode.HARD;
+            case QUIZ_GAME:
+                return ExamTakingFrame.QuizMode.QUIZ_GAME;
+            default:
+                return ExamTakingFrame.QuizMode.EASY;
         }
     }
 }

@@ -26,7 +26,7 @@ public class Main {
         });
     }
 
-    private static void applyModernTheme() {
+    public static void applyModernTheme() {
         // Bảng màu chủ đạo (xanh dương dịu mắt + bo góc hiện đại)
         Color accent = new Color(59, 130, 246);      // #3B82F6
         Color success = new Color(34, 197, 94);      // #22C55E

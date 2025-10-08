@@ -139,16 +139,47 @@ public class QuestionDAO {
 
     // Xóa câu hỏi
     public boolean deleteQuestion(int questionId) {
-        // Xóa đáp án đúng trước
-        deleteCorrectAnswers(questionId);
-        
-        String sql = "DELETE FROM Questions WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, questionId);
-            return stmt.executeUpdate() > 0;
+        try {
+            // Bắt đầu transaction
+            connection.setAutoCommit(false);
+            
+            // 1. Xóa UserAnswers liên quan đến câu hỏi này
+            deleteUserAnswersByQuestionId(questionId);
+            
+            // 2. Xóa Exam_Questions liên quan đến câu hỏi này
+            deleteExamQuestionsByQuestionId(questionId);
+            
+            // 3. Xóa đáp án đúng
+            deleteCorrectAnswers(questionId);
+            
+            // 4. Xóa câu hỏi
+            String sql = "DELETE FROM Questions WHERE id = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, questionId);
+                int affectedRows = stmt.executeUpdate();
+                
+                if (affectedRows > 0) {
+                    connection.commit();
+                    return true;
+                } else {
+                    connection.rollback();
+                    return false;
+                }
+            }
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
             e.printStackTrace();
             return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -197,6 +228,61 @@ public class QuestionDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    // Xóa UserAnswers liên quan đến câu hỏi
+    private void deleteUserAnswersByQuestionId(int questionId) {
+        String sql = "DELETE FROM UserAnswers WHERE questionId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, questionId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Xóa Exam_Questions liên quan đến câu hỏi
+    private void deleteExamQuestionsByQuestionId(int questionId) {
+        String sql = "DELETE FROM Exam_Questions WHERE questionId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, questionId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Kiểm tra xem câu hỏi có đang được sử dụng trong đề thi nào không
+    public boolean isQuestionUsedInExams(int questionId) {
+        String sql = "SELECT COUNT(*) FROM Exam_Questions WHERE questionId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, questionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    // Lấy danh sách đề thi đang sử dụng câu hỏi này
+    public List<String> getExamsUsingQuestion(int questionId) {
+        List<String> examNames = new ArrayList<>();
+        String sql = "SELECT e.title FROM Exams e " +
+                    "JOIN Exam_Questions eq ON e.id = eq.examId " +
+                    "WHERE eq.questionId = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, questionId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                examNames.add(rs.getString("title"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return examNames;
     }
 
     // Map ResultSet to Question object

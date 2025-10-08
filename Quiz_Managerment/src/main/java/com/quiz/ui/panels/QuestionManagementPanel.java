@@ -286,17 +286,37 @@ public class QuestionManagementPanel extends JPanel {
         }
         
         Question selectedQuestion = questions.get(selectedRow);
-        int option = JOptionPane.showConfirmDialog(this, 
-            "Bạn có chắc chắn muốn xóa câu hỏi này?", 
-            "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         
-        if (option == JOptionPane.YES_OPTION) {
-            if (questionDAO.deleteQuestion(selectedQuestion.getId())) {
-                JOptionPane.showMessageDialog(this, "Xóa câu hỏi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                loadQuestions();
-            } else {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa câu hỏi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        // Kiểm tra xem câu hỏi có đang được sử dụng trong đề thi nào không
+        if (questionDAO.isQuestionUsedInExams(selectedQuestion.getId())) {
+            List<String> examNames = questionDAO.getExamsUsingQuestion(selectedQuestion.getId());
+            String examList = String.join(", ", examNames);
+            
+            int option = JOptionPane.showConfirmDialog(this, 
+                "Câu hỏi này đang được sử dụng trong các đề thi sau:\n" + examList + 
+                "\n\nViệc xóa câu hỏi sẽ tự động loại bỏ nó khỏi tất cả các đề thi.\n" +
+                "Bạn có chắc chắn muốn tiếp tục?", 
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+            if (option != JOptionPane.YES_OPTION) {
+                return;
             }
+        } else {
+            int option = JOptionPane.showConfirmDialog(this, 
+                "Bạn có chắc chắn muốn xóa câu hỏi này?", 
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+            
+            if (option != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+        
+        // Thực hiện xóa
+        if (questionDAO.deleteQuestion(selectedQuestion.getId())) {
+            JOptionPane.showMessageDialog(this, "Xóa câu hỏi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            loadQuestions();
+        } else {
+            JOptionPane.showMessageDialog(this, "Lỗi khi xóa câu hỏi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
