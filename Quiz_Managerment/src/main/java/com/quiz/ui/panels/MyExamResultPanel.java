@@ -16,6 +16,7 @@ public class MyExamResultPanel extends JPanel {
     private JTable resultTable;
     private DefaultTableModel tableModel;
     private JButton refreshButton, viewDetailsButton;
+    private JScrollPane scrollPane;
     private ExamResultDAO examResultDAO;
     private List<ExamResult> myExamResults;
     private User currentUser;
@@ -43,9 +44,34 @@ public class MyExamResultPanel extends JPanel {
             }
         };
         resultTable = new JTable(tableModel);
-        resultTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        resultTable.setRowHeight(25);
+        resultTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        resultTable.setRowHeight(30);
         resultTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Set column widths for better data display
+        resultTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        resultTable.getColumnModel().getColumn(1).setPreferredWidth(200);  // Đề thi
+        resultTable.getColumnModel().getColumn(2).setPreferredWidth(80);   // Điểm
+        resultTable.getColumnModel().getColumn(3).setPreferredWidth(150);  // Thời gian bắt đầu
+        resultTable.getColumnModel().getColumn(4).setPreferredWidth(150);  // Thời gian kết thúc
+        resultTable.getColumnModel().getColumn(5).setPreferredWidth(150);  // Ngày nộp
+        
+        // Improve table header
+        resultTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        resultTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        
+        // Scroll pane with better sizing
+        scrollPane = new JScrollPane(resultTable);
+        scrollPane.setPreferredSize(new Dimension(900, 450));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Enable grid lines for better readability
+        resultTable.setShowGrid(true);
+        resultTable.setGridColor(new Color(220, 220, 220));
+        
+        // Improve selection colors
+        resultTable.setSelectionBackground(new Color(70, 130, 180));
+        resultTable.setSelectionForeground(Color.WHITE);
         
         // Buttons
         refreshButton = new JButton("Làm mới");
@@ -76,7 +102,7 @@ public class MyExamResultPanel extends JPanel {
         
         // Center panel - Table
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JScrollPane(resultTable), BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
         
         add(topPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
@@ -98,10 +124,7 @@ public class MyExamResultPanel extends JPanel {
     }
 
     private void loadMyExamResults() {
-        int userId = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
-        // Debug log
-        System.out.println("DEBUG - MyExamResultPanel.loadMyExamResults() - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
-        System.out.println("DEBUG - MyExamResultPanel.loadMyExamResults() - User ID: " + userId);
+        int userId = (currentUser != null) ? currentUser.getId() : 1;
         myExamResults = examResultDAO.getExamResultsByUser(userId);
         updateTable();
     }

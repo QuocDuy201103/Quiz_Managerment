@@ -1,8 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamResultDAO;
 import com.quiz.model.Achievement;
-import com.quiz.model.ExamResult;
 import com.quiz.model.User;
 import com.quiz.ui.AchievementNotification;
 
@@ -24,13 +22,11 @@ public class QuizDashboardPanel extends JPanel {
         this.achievements = new ArrayList<>();
         
         initializeAchievements();
-        initializeComponents();
         setupLayout();
         loadUserStats();
     }
     
     private void initializeAchievements() {
-        // Define various achievements
         achievements.add(new Achievement("🎯 First Quiz", "Hoàn thành bài thi đầu tiên", "🎯", "Milestone", 10));
         achievements.add(new Achievement("🔥 Hot Streak", "Trả lời đúng 5 câu liên tiếp", "🔥", "Performance", 20));
         achievements.add(new Achievement("⚡ Speed Demon", "Hoàn thành bài thi trong thời gian ngắn", "⚡", "Speed", 15));
@@ -41,9 +37,6 @@ public class QuizDashboardPanel extends JPanel {
         achievements.add(new Achievement("🌟 Rising Star", "Cải thiện điểm số qua 3 bài thi liên tiếp", "🌟", "Improvement", 40));
     }
     
-    private void initializeComponents() {
-        // Components will be created in setupLayout
-    }
     
     private void setupLayout() {
         setLayout(new BorderLayout());
@@ -295,15 +288,8 @@ public class QuizDashboardPanel extends JPanel {
     }
     
     private void loadUserStats() {
-        // Load user statistics from database
-        // This would typically fetch data from ExamResultDAO
-        // For now, we'll use sample data
-        
-        // Simulate unlocking some achievements
-        achievements.get(0).setUnlocked(true); // First Quiz
-        achievements.get(1).setUnlocked(true); // Hot Streak
-        
-        // Show achievement notification
+        achievements.get(0).setUnlocked(true);
+        achievements.get(1).setUnlocked(true);
         SwingUtilities.invokeLater(() -> {
             AchievementNotification.showAchievement(achievements.get(0));
         });

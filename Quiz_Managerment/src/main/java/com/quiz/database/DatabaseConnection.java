@@ -49,7 +49,6 @@ public class DatabaseConnection {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            System.out.println("Connect database successfully!");
         } catch (ClassNotFoundException | SQLException e) {
             System.err.println("Error connect to database: " + e.getMessage());
             e.printStackTrace();
@@ -83,7 +82,6 @@ public class DatabaseConnection {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
-                System.out.println("Đã đóng kết nối database");
             }
         } catch (SQLException e) {
             System.err.println("Lỗi đóng kết nối: " + e.getMessage());

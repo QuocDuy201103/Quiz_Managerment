@@ -12,14 +12,10 @@ public class RegisterErrorDialog extends JDialog {
     public RegisterErrorDialog(JFrame parent, String message) {
         super(parent, "Lỗi đăng ký", true);
         this.message = message;
-        initializeComponents();
         setupLayout();
         setupFrame();
     }
     
-    private void initializeComponents() {
-        // Components sẽ được tạo trong setupLayout
-    }
     
     private void setupLayout() {
         setLayout(new BorderLayout());

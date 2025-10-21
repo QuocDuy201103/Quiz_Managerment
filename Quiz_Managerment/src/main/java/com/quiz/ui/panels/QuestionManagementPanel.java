@@ -23,6 +23,7 @@ public class QuestionManagementPanel extends JPanel {
     private JComboBox<Topic> topicFilterCombo;
     private JComboBox<Difficulty> difficultyFilterCombo;
     private JButton addButton, editButton, deleteButton, refreshButton;
+    private JScrollPane scrollPane;
     private QuestionDAO questionDAO;
     private SubjectDAO subjectDAO;
     private TopicDAO topicDAO;
@@ -56,9 +57,35 @@ public class QuestionManagementPanel extends JPanel {
             }
         };
         questionTable = new JTable(tableModel);
-        questionTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        questionTable.setRowHeight(25);
+        questionTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        questionTable.setRowHeight(30);
         questionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Set column widths for better data display
+        questionTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        questionTable.getColumnModel().getColumn(1).setPreferredWidth(300);  // Nội dung
+        questionTable.getColumnModel().getColumn(2).setPreferredWidth(120);  // Môn học
+        questionTable.getColumnModel().getColumn(3).setPreferredWidth(120);  // Chủ đề
+        questionTable.getColumnModel().getColumn(4).setPreferredWidth(80);   // Độ khó
+        questionTable.getColumnModel().getColumn(5).setPreferredWidth(120);  // Người tạo
+        questionTable.getColumnModel().getColumn(6).setPreferredWidth(150);  // Ngày tạo
+        
+        // Improve table header
+        questionTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        questionTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        
+        // Scroll pane with better sizing
+        scrollPane = new JScrollPane(questionTable);
+        scrollPane.setPreferredSize(new Dimension(1000, 450));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Enable grid lines for better readability
+        questionTable.setShowGrid(true);
+        questionTable.setGridColor(new Color(220, 220, 220));
+        
+        // Improve selection colors
+        questionTable.setSelectionBackground(new Color(70, 130, 180));
+        questionTable.setSelectionForeground(Color.WHITE);
         
         // Search field
         searchField = new JTextField(20);
@@ -140,7 +167,7 @@ public class QuestionManagementPanel extends JPanel {
         
         // Center panel - Table
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JScrollPane(questionTable), BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
         
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
@@ -646,9 +673,6 @@ public class QuestionManagementPanel extends JPanel {
                 // Add new question
                 int createdBy = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
                 
-                // Debug log
-                System.out.println("DEBUG - Current User: " + (currentUser != null ? currentUser.getUsername() : "null"));
-                System.out.println("DEBUG - CreatedBy ID: " + createdBy);
                 
                 Question newQuestion = new Question(content, optionA, optionB, optionC, optionD,
                     selectedTopic.getId(), selectedDifficulty.getId(), selectedSubject.getId(), createdBy);
@@ -664,11 +688,6 @@ public class QuestionManagementPanel extends JPanel {
                 question.setDifficultyId(selectedDifficulty.getId());
                 question.setSubjectId(selectedSubject.getId());
                 
-                // Debug log
-                System.out.println("DEBUG - Update Question - ID: " + question.getId());
-                System.out.println("DEBUG - Update Question - Difficulty ID: " + selectedDifficulty.getId() + " (" + selectedDifficulty.getLevel() + ")");
-                System.out.println("DEBUG - Update Question - Topic ID: " + selectedTopic.getId());
-                System.out.println("DEBUG - Update Question - Subject ID: " + selectedSubject.getId());
                 
                 success = questionDAO.updateQuestion(question, correctAnswers);
             }

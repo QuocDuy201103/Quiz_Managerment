@@ -814,9 +814,6 @@ public class ExamTakingFrame extends JFrame {
             userAnswers.add(newAnswer);
         }
 
-        // Debug logging
-        System.out.println("DEBUG - Saved answer for question " + currentQuestion.getId() +
-                ": '" + selectedOptions + "' (Mode: " + currentMode + ")");
     }
 
     private void previousQuestion() {
@@ -861,29 +858,19 @@ public class ExamTakingFrame extends JFrame {
         
         // Calculate score
         double score = calculateScore();
-        System.out.println("DEBUG - Score calculated: " + score);
         
-        // Save exam result
         ExamResultDAO examResultDAO = new ExamResultDAO();
-        int userId = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
-        // Debug log
-        System.out.println("DEBUG - ExamTakingFrame.submitExam() - Current User: "
-                + (currentUser != null ? currentUser.getUsername() : "null"));
-        System.out.println("DEBUG - ExamTakingFrame.submitExam() - User ID: " + userId);
+        int userId = (currentUser != null) ? currentUser.getId() : 1;
         ExamResult result = new ExamResult(userId, exam.getId(), startTime);
         result.setEndTime(LocalDateTime.now());
         result.setScore(score);
         
-        System.out.println("DEBUG - Attempting to save exam result...");
         boolean saveResult = examResultDAO.addExamResult(result, userAnswers);
-        System.out.println("DEBUG - Save result: " + saveResult);
 
         if (saveResult) {
-            System.out.println("DEBUG - Showing detailed results...");
             // Calculate and show detailed results
             showDetailedResults(score, questions.size());
 
-            System.out.println("DEBUG - Showing result dialog...");
             try {
                 // Show enhanced result dialog
                 ExamResultDialog resultDialog = new ExamResultDialog(
@@ -891,18 +878,15 @@ public class ExamTakingFrame extends JFrame {
                         (exam.getDuration() * 60) - timeRemaining, exam.getDuration() * 60);
                 resultDialog.setVisible(true);
             } catch (Exception e) {
-                System.out.println("DEBUG - Error showing result dialog: " + e.getMessage());
                 // Fallback to simple message
             JOptionPane.showMessageDialog(this, 
                 String.format("Nộp bài thành công!\nĐiểm số: %.1f/10", score), 
                 "Kết quả", JOptionPane.INFORMATION_MESSAGE);
             }
 
-            System.out.println("DEBUG - Closing exam frame...");
             // Close the exam frame after result dialog is closed
             dispose();
         } else {
-            System.out.println("DEBUG - Failed to save exam result");
             JOptionPane.showMessageDialog(this, 
                 "Lỗi khi nộp bài!", 
                 "Lỗi", JOptionPane.ERROR_MESSAGE);

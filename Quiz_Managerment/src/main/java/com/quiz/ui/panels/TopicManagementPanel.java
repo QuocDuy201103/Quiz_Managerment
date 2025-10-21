@@ -18,6 +18,7 @@ public class TopicManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField searchField;
     private JButton addButton, editButton, deleteButton, refreshButton;
+    private JScrollPane scrollPane;
     private TopicDAO topicDAO;
     private SubjectDAO subjectDAO;
     private List<Topic> topics;
@@ -41,9 +42,31 @@ public class TopicManagementPanel extends JPanel {
             }
         };
         topicTable = new JTable(tableModel);
-        topicTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        topicTable.setRowHeight(25);
+        topicTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        topicTable.setRowHeight(30);
         topicTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Set column widths for better data display
+        topicTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        topicTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // Tên chủ đề
+        topicTable.getColumnModel().getColumn(2).setPreferredWidth(200);  // Môn học
+        
+        // Improve table header
+        topicTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        topicTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        
+        // Scroll pane with better sizing
+        scrollPane = new JScrollPane(topicTable);
+        scrollPane.setPreferredSize(new Dimension(700, 450));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Enable grid lines for better readability
+        topicTable.setShowGrid(true);
+        topicTable.setGridColor(new Color(220, 220, 220));
+        
+        // Improve selection colors
+        topicTable.setSelectionBackground(new Color(70, 130, 180));
+        topicTable.setSelectionForeground(Color.WHITE);
         
         // Search field
         searchField = new JTextField(20);
@@ -78,7 +101,7 @@ public class TopicManagementPanel extends JPanel {
         
         // Center panel - Table
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JScrollPane(topicTable), BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
         
         add(topPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);

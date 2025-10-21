@@ -4,7 +4,9 @@ import com.quiz.model.User;
 import com.quiz.ui.panels.*;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 /**
  * Giao diện chính của ứng dụng
@@ -13,9 +15,10 @@ public class MainFrame extends JFrame {
     private User currentUser;
     private JTabbedPane tabbedPane;
     private java.util.List<JButton> sidebarButtons = new java.util.ArrayList<>();
-    private final Color SIDEBAR_BG = new Color(54, 44, 80);      // dark purple
-    private final Color SIDEBAR_BG_ACTIVE = new Color(74, 64, 100);
+    private final Color SIDEBAR_BG = Color.BLACK;
     private final Color SIDEBAR_TEXT = Color.WHITE;
+    private final Color ACTIVE_BG = new Color(70, 130, 180);
+    private final Color ACTIVE_BORDER = new Color(30, 144, 255);
 
     public MainFrame(User user) {
         this.currentUser = user;
@@ -26,71 +29,93 @@ public class MainFrame extends JFrame {
     }
 
     private void initializeComponents() {
-        tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 
     private void setupLayout() {
         setLayout(new BorderLayout());
-        
-        // Header (theo design có thanh tiêu đề bên trong frame)
+
+        // Header
         JPanel headerPanel = createHeaderBar();
         add(headerPanel, BorderLayout.NORTH);
-        
-        // Không sử dụng menu bar trên cùng
+
         setJMenuBar(null);
-        
+
         // Status bar
         JPanel statusPanel = createStatusBar();
         add(statusPanel, BorderLayout.SOUTH);
-        
-        // Thêm các tab dựa trên quyền của user
+
         addTabsBasedOnRole();
-        
-        // Ẩn thanh tab, chỉ sử dụng sidebar để điều hướng
-        hideTabHeaders();
-        
-        // Bố cục trung tâm gồm sidebar bên trái và nội dung tab ở giữa
+        completelyHideTabHeaders();
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(tabbedPane, BorderLayout.CENTER);
         centerPanel.add(createSidebar(), BorderLayout.WEST);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Đồng bộ highlight sidebar khi đổi tab
-        tabbedPane.addChangeListener(e -> updateSidebarSelection());
-        updateSidebarSelection();
+        tabbedPane.addChangeListener(e -> {
+            SwingUtilities.invokeLater(() -> updateSidebarSelection());
+        });
+        
+        SwingUtilities.invokeLater(() -> {
+            if (tabbedPane.getTabCount() > 0) {
+                tabbedPane.setSelectedIndex(0);
+                updateSidebarSelection();
+            }
+        });
     }
 
-    private void hideTabHeaders() {
-        tabbedPane.setBorder(BorderFactory.createEmptyBorder());
-        tabbedPane.setUI(new javax.swing.plaf.basic.BasicTabbedPaneUI() {
+    private void completelyHideTabHeaders() {
+        tabbedPane.setUI(new BasicTabbedPaneUI() {
             @Override
             protected int calculateTabAreaHeight(int tabPlacement, int runCount, int maxTabHeight) {
                 return 0;
             }
+            
+            @Override
+            protected int calculateTabAreaWidth(int tabPlacement, int runCount, int maxTabWidth) {
+                return 0;
+            }
+            
             @Override
             protected void paintTabArea(Graphics g, int tabPlacement, int selectedIndex) {
-                // no-op to avoid drawing tab area
+                // No-op
             }
+            
             @Override
             protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
-                // no-op to avoid the thin top border line
+                // No-op
+            }
+            
+            @Override
+            protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, 
+                                   int tabIndex, Rectangle iconRect, Rectangle textRect) {
+                // No-op
+            }
+            
+            @Override
+            protected void paintFocusIndicator(Graphics g, int tabPlacement, Rectangle[] rects,
+                                              int tabIndex, Rectangle iconRect, Rectangle textRect,
+                                              boolean isSelected) {
+                // No-op
             }
         });
+        
+        tabbedPane.setBorder(null);
+        tabbedPane.setBackground(null);
+        tabbedPane.setOpaque(false);
     }
 
     private JPanel createHeaderBar() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
-        header.setBackground(new Color(74, 64, 100)); // top bar purple
+        header.setBackground(Color.BLACK);
 
-        // Left: App title
-        JLabel titleLabel = new JLabel(getCurrentTabTitle());
+        JLabel titleLabel = new JLabel("Quản Lý Trắc Nghiệm");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         header.add(titleLabel, BorderLayout.WEST);
-
-        // Right: user, time, logout
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightPanel.setOpaque(false);
 
@@ -121,140 +146,197 @@ public class MainFrame extends JFrame {
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(16, 12, 16, 12));
+        sidebar.setBorder(BorderFactory.createEmptyBorder(20, 16, 20, 16));
         sidebar.setBackground(SIDEBAR_BG);
-        
-        // Tạo nút dựa trên các tab hiện có
+
+        JLabel sidebarHeader = new JLabel("MENU");
+        sidebarHeader.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        sidebarHeader.setForeground(new Color(200, 200, 200));
+        sidebarHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sidebarHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        sidebar.add(sidebarHeader);
+
+        sidebarButtons.clear();
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             final int index = i;
             String title = tabbedPane.getTitleAt(i);
-            JButton btn = new JButton(title);
-            btn.setIcon(resolveTabIcon(title));
-            btn.setHorizontalAlignment(SwingConstants.LEFT);
-            btn.setIconTextGap(10);
-            btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(180, 36));
-            btn.setPreferredSize(new Dimension(180, 36));
-            btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            btn.setFocusPainted(false);
-            btn.setOpaque(true);
-            btn.setBackground(SIDEBAR_BG);
-            btn.setForeground(SIDEBAR_TEXT);
-            btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 8));
-            btn.addActionListener(e -> tabbedPane.setSelectedIndex(index));
+            JButton btn = createSidebarButton(title, index);
             sidebar.add(btn);
             sidebar.add(Box.createVerticalStrut(8));
             sidebarButtons.add(btn);
         }
-        
-        // Đảm bảo chiều rộng cố định giống design
+
+        sidebar.add(Box.createVerticalGlue());
+
         JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBackground(sidebar.getBackground());
-        wrapper.setPreferredSize(new Dimension(200, 0));
+        wrapper.setBackground(SIDEBAR_BG);
+        
+        int responsiveWidth = calculateResponsiveSidebarWidth();
+        wrapper.setPreferredSize(new Dimension(responsiveWidth, 0));
+        wrapper.setMinimumSize(new Dimension(240, 0));
+        wrapper.setMaximumSize(new Dimension(320, Integer.MAX_VALUE));
+        
         wrapper.add(sidebar, BorderLayout.NORTH);
         return wrapper;
     }
 
-    private void updateSidebarSelection() {
-        int selected = tabbedPane.getSelectedIndex();
-        for (int i = 0; i < sidebarButtons.size(); i++) {
-            JButton b = sidebarButtons.get(i);
-            if (i == selected) {
-                b.setBackground(SIDEBAR_BG_ACTIVE);
-            } else {
-                b.setBackground(SIDEBAR_BG);
+    private JButton createSidebarButton(String title, int index) {
+        JButton btn = new JButton(title);
+        btn.setIcon(resolveTabIcon(title));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setIconTextGap(12);
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        int buttonWidth = Math.min(280, calculateResponsiveSidebarWidth() - 32);
+        btn.setMaximumSize(new Dimension(buttonWidth, 56));
+        btn.setPreferredSize(new Dimension(buttonWidth, 56));
+        btn.setMinimumSize(new Dimension(200, 56));
+        
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(true);
+        btn.setOpaque(true);
+        btn.setBackground(SIDEBAR_BG);
+        btn.setForeground(SIDEBAR_TEXT);
+        btn.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        btn.setBorderPainted(false);
+        
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (tabbedPane.getSelectedIndex() != index) {
+                    btn.setBackground(new Color(40, 40, 40));
+                }
             }
-        }
-        // update header breadcrumb
-        // Force header to refresh title
-        // Simply re-add header text by updating frame titleLabel is simpler if stored; here, set frame title
-        // but we keep frame title as is. No-op.
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                if (tabbedPane.getSelectedIndex() != index) {
+                    btn.setBackground(SIDEBAR_BG);
+                }
+            }
+        });
+        
+        btn.addActionListener(e -> {
+            tabbedPane.setSelectedIndex(index);
+            updateSidebarSelection();
+        });
+        
+        return btn;
     }
 
-    private String getCurrentTabTitle() {
-        int idx = tabbedPane.getTabCount() > 0 ? tabbedPane.getSelectedIndex() : -1;
-        if (idx >= 0) return tabbedPane.getTitleAt(idx);
-        return "Quản Lý Trắc Nghiệm";
+    private int calculateResponsiveSidebarWidth() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int screenWidth = screenSize.width;
+        
+        if (screenWidth >= 1920) {
+            return 300;
+        } else if (screenWidth >= 1366) {
+            return 280;
+        } else if (screenWidth >= 1024) {
+            return 260;
+        } else {
+            return 240;
+        }
+    }
+
+    private void updateSidebarSelection() {
+        int selected = tabbedPane.getSelectedIndex();
+        
+        for (int i = 0; i < sidebarButtons.size(); i++) {
+            JButton btn = sidebarButtons.get(i);
+            
+            btn.setBorderPainted(false);
+            btn.setBorder(null);
+            
+            if (i == selected) {
+                btn.setBackground(ACTIVE_BG);
+                btn.setForeground(Color.WHITE);
+                btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                btn.setBorderPainted(true);
+                btn.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 0, 0, ACTIVE_BORDER),
+                    BorderFactory.createEmptyBorder(12, 12, 12, 16)
+                ));
+            } else {
+                btn.setBackground(SIDEBAR_BG);
+                btn.setForeground(SIDEBAR_TEXT);
+                btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                btn.setBorderPainted(false);
+                btn.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+            }
+            
+            btn.invalidate();
+            btn.validate();
+            btn.repaint();
+        }
     }
 
     private Icon resolveTabIcon(String title) {
         String t = title.toLowerCase();
         if (t.contains("người dùng") || t.contains("user")) {
-            return IconUtil.load("/images/user.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/user.png", 16, 16), Color.WHITE);
         }
         if (t.contains("môn học") || t.contains("subject")) {
-            return IconUtil.load("/images/subject.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/subject.png", 16, 16), Color.WHITE);
         }
         if (t.contains("chủ đề") || t.contains("topic")) {
-            return IconUtil.load("/images/topic.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/topic.png", 16, 16), Color.WHITE);
         }
         if (t.contains("câu hỏi") || t.contains("question")) {
-            return IconUtil.load("/images/question.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/question.png", 16, 16), Color.WHITE);
         }
         if (t.contains("đề thi") || t.contains("exam")) {
-            return IconUtil.load("/images/exam.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/exam.png", 16, 16), Color.WHITE);
         }
         if (t.contains("kết quả")) {
-            return IconUtil.load("/images/exam-results.png", 16, 16);
+            return tintIcon(IconUtil.load("/images/exam-results.png", 16, 16), Color.WHITE);
         }
         return null;
     }
 
-    private JMenuBar createMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
+    private Icon tintIcon(Icon icon, Color tintColor) {
+        if (icon == null) return null;
         
-        // Menu Hệ thống
-        JMenu systemMenu = new JMenu("Hệ thống");
-        systemMenu.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        ImageIcon imageIcon = (ImageIcon) icon;
+        Image image = imageIcon.getImage();
         
-        JMenuItem logoutItem = new JMenuItem("Đăng xuất");
-        logoutItem.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        logoutItem.addActionListener(e -> logout());
+        BufferedImage bufferedImage = new BufferedImage(
+            image.getWidth(null), 
+            image.getHeight(null), 
+            BufferedImage.TYPE_INT_ARGB
+        );
         
-        JMenuItem exitItem = new JMenuItem("Thoát");
-        exitItem.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        exitItem.addActionListener(e -> System.exit(0));
+        Graphics2D g2d = bufferedImage.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.drawImage(image, 0, 0, null);
+        g2d.setComposite(AlphaComposite.SrcAtop);
+        g2d.setColor(tintColor);
+        g2d.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+        g2d.dispose();
         
-        systemMenu.add(logoutItem);
-        systemMenu.addSeparator();
-        systemMenu.add(exitItem);
-        
-        // Menu Trợ giúp
-        JMenu helpMenu = new JMenu("Trợ giúp");
-        helpMenu.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
-        JMenuItem aboutItem = new JMenuItem("Giới thiệu");
-        aboutItem.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        aboutItem.addActionListener(e -> showAbout());
-        
-        helpMenu.add(aboutItem);
-        
-        menuBar.add(systemMenu);
-        menuBar.add(helpMenu);
-        
-        return menuBar;
+        return new ImageIcon(bufferedImage);
     }
 
     private JPanel createStatusBar() {
         JPanel statusPanel = new JPanel(new BorderLayout());
         statusPanel.setBorder(BorderFactory.createEtchedBorder());
         statusPanel.setBackground(new Color(240, 240, 240));
-        
-        JLabel userLabel = new JLabel("Người dùng: " + currentUser.getUsername() + 
-                                    " (" + currentUser.getRole().getName() + ")");
+
+        JLabel userLabel = new JLabel("Người dùng: " + currentUser.getUsername() +
+                " (" + currentUser.getRole().getName() + ")");
         userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        
+
         JLabel timeLabel = new JLabel();
         timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         updateTimeLabel(timeLabel);
-        
-        // Cập nhật thời gian mỗi giây
+
         Timer timer = new Timer(1000, e -> updateTimeLabel(timeLabel));
         timer.start();
-        
+
         statusPanel.add(userLabel, BorderLayout.WEST);
         statusPanel.add(timeLabel, BorderLayout.EAST);
-        
+
         return statusPanel;
     }
 
@@ -265,7 +347,7 @@ public class MainFrame extends JFrame {
 
     private void addTabsBasedOnRole() {
         String roleName = currentUser.getRole().getName().toLowerCase();
-        
+
         switch (roleName) {
             case "admin":
                 addAdminTabs();
@@ -280,84 +362,57 @@ public class MainFrame extends JFrame {
     }
 
     private void addAdminTabs() {
-        // Quản lý người dùng
         tabbedPane.addTab("Quản lý người dùng", IconUtil.load("/images/user.png", 16, 16), new UserManagementPanel());
-        
-        // Quản lý môn học
-        tabbedPane.addTab("Quản lý môn học", IconUtil.load("/images/subject.png", 16, 16),new SubjectManagementPanel());
-        
-        // Quản lý chủ đề
+        tabbedPane.addTab("Quản lý môn học", IconUtil.load("/images/subject.png", 16, 16), new SubjectManagementPanel());
         tabbedPane.addTab("Quản lý chủ đề", IconUtil.load("/images/topic.png", 16, 16), new TopicManagementPanel());
-        
-        // Quản lý câu hỏi
         tabbedPane.addTab("Quản lý câu hỏi", IconUtil.load("/images/question.png", 16, 16), new QuestionManagementPanel(currentUser));
-        
-        // Quản lý đề thi
         tabbedPane.addTab("Quản lý đề thi", IconUtil.load("/images/exam.png", 16, 16), new ExamManagementPanel(currentUser));
-        
-        // Xem kết quả thi
         tabbedPane.addTab("Kết quả thi", IconUtil.load("/images/exam-results.png", 16, 16), new ExamResultPanel());
     }
 
     private void addTeacherTabs() {
-        // Quản lý câu hỏi
         tabbedPane.addTab("Quản lý câu hỏi", IconUtil.load("/images/question.png", 16, 16), new QuestionManagementPanel(currentUser));
-        
-        // Quản lý đề thi
         tabbedPane.addTab("Quản lý đề thi", IconUtil.load("/images/exam.png", 16, 16), new ExamManagementPanel(currentUser));
-        
-        // Xem kết quả thi
         tabbedPane.addTab("Kết quả thi", IconUtil.load("/images/exam-results.png", 16, 16), new ExamResultPanel());
     }
 
     private void addStudentTabs() {
-        // Danh sách đề thi
         tabbedPane.addTab("Đề thi", IconUtil.load("/images/exam.png", 16, 16), new StudentExamPanel(currentUser));
-        
-        // Kết quả của tôi
         tabbedPane.addTab("Kết quả của tôi", IconUtil.load("/images/exam-results.png", 16, 16), new MyExamResultPanel(currentUser));
     }
 
     private void setupEventHandlers() {
-        // Xử lý đóng cửa sổ
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
                 int option = JOptionPane.showConfirmDialog(
-                    MainFrame.this,
-                    "Bạn có chắc chắn muốn thoát?",
-                    "Xác nhận",
-                    JOptionPane.YES_NO_OPTION
-                );
+                        MainFrame.this,
+                        "Bạn có chắc chắn muốn thoát?",
+                        "Xác nhận",
+                        JOptionPane.YES_NO_OPTION);
                 if (option == JOptionPane.YES_OPTION) {
                     System.exit(0);
                 }
             }
         });
-        
-        // Xử lý thay đổi trạng thái cửa sổ
+
         addWindowStateListener(new java.awt.event.WindowStateListener() {
             @Override
             public void windowStateChanged(java.awt.event.WindowEvent e) {
                 int oldState = e.getOldState();
                 int newState = e.getNewState();
-                
-                // Kiểm tra nếu chuyển từ MAXIMIZED_BOTH về NORMAL (restore down)
+
                 if ((oldState & JFrame.MAXIMIZED_BOTH) != 0 && (newState & JFrame.NORMAL) != 0) {
-                    // Đảm bảo kích thước tối thiểu và hợp lý
                     SwingUtilities.invokeLater(() -> {
                         setSize(1200, 800);
                         setMinimumSize(new Dimension(1000, 700));
                         setLocationRelativeTo(null);
-                        
-                        // Đảm bảo layout được cập nhật
                         revalidate();
                         repaint();
                     });
                 }
-                
-                // Kiểm tra nếu chuyển từ NORMAL về MAXIMIZED_BOTH
+
                 if ((oldState & JFrame.NORMAL) != 0 && (newState & JFrame.MAXIMIZED_BOTH) != 0) {
                     SwingUtilities.invokeLater(() -> {
                         revalidate();
@@ -370,42 +425,29 @@ public class MainFrame extends JFrame {
 
     private void setupFrame() {
         setTitle("Hệ thống quản lý trắc nghiệm - " + currentUser.getUsername());
-        
-        // Thiết lập kích thước tối thiểu trước khi maximize
         setMinimumSize(new Dimension(1000, 700));
         setPreferredSize(new Dimension(1200, 800));
-        
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
-        
-        // Thiết lập icon
+
         try {
             setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icon.png")));
         } catch (Exception e) {
-            // Icon không tồn tại, bỏ qua
+            // Icon not found
         }
     }
 
     private void logout() {
         int option = JOptionPane.showConfirmDialog(
-            this,
-            "Bạn có chắc chắn muốn đăng xuất?",
-            "Xác nhận",
-            JOptionPane.YES_NO_OPTION
-        );
-        
+                this,
+                "Bạn có chắc chắn muốn đăng xuất?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
+
         if (option == JOptionPane.YES_OPTION) {
             dispose();
             new LoginFrame().setVisible(true);
         }
     }
 
-    private void showAbout() {
-        String message = "Hệ thống quản lý trắc nghiệm\n" +
-                        "Phiên bản: 1.0.0\n" +
-                        "Phát triển bởi: Java Team\n" +
-                        "Công nghệ: Java Swing, SQL Server";
-        
-        JOptionPane.showMessageDialog(this, message, "Giới thiệu", JOptionPane.INFORMATION_MESSAGE);
-    }
 }

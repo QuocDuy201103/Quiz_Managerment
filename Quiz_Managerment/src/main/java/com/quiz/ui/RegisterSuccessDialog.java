@@ -10,14 +10,10 @@ public class RegisterSuccessDialog extends JDialog {
     
     public RegisterSuccessDialog(JFrame parent, String username) {
         super(parent, "Đăng ký thành công", true);
-        initializeComponents(username);
         setupLayout();
         setupFrame();
     }
     
-    private void initializeComponents(String username) {
-        // Components sẽ được tạo trong setupLayout
-    }
     
     private void setupLayout() {
         setLayout(new BorderLayout());

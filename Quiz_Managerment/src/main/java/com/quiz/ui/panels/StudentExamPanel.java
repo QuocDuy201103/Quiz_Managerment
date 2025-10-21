@@ -19,6 +19,7 @@ public class StudentExamPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField searchField;
     private JButton startExamButton, refreshButton;
+    private JScrollPane scrollPane;
     private ExamDAO examDAO;
     private List<Exam> exams;
     private User currentUser;
@@ -46,9 +47,34 @@ public class StudentExamPanel extends JPanel {
             }
         };
         examTable = new JTable(tableModel);
-        examTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        examTable.setRowHeight(25);
+        examTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        examTable.setRowHeight(30);
         examTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Set column widths for better data display
+        examTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        examTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // Tiêu đề
+        examTable.getColumnModel().getColumn(2).setPreferredWidth(150);  // Môn học
+        examTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Thời gian
+        examTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Số câu hỏi
+        examTable.getColumnModel().getColumn(5).setPreferredWidth(150);  // Ngày tạo
+        
+        // Improve table header
+        examTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        examTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        
+        // Scroll pane with better sizing
+        scrollPane = new JScrollPane(examTable);
+        scrollPane.setPreferredSize(new Dimension(900, 450));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Enable grid lines for better readability
+        examTable.setShowGrid(true);
+        examTable.setGridColor(new Color(220, 220, 220));
+        
+        // Improve selection colors
+        examTable.setSelectionBackground(new Color(70, 130, 180));
+        examTable.setSelectionForeground(Color.WHITE);
         
         // Search field
         searchField = new JTextField(20);
@@ -77,7 +103,7 @@ public class StudentExamPanel extends JPanel {
         
         // Center panel - Table
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JScrollPane(examTable), BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
         
         add(topPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);

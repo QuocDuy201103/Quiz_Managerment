@@ -17,6 +17,7 @@ public class UserManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField searchField;
     private JButton addButton, editButton, deleteButton, refreshButton;
+    private JScrollPane scrollPane;
     private UserDAO userDAO;
     private List<User> users;
 
@@ -38,13 +39,34 @@ public class UserManagementPanel extends JPanel {
             }
         };
         userTable = new JTable(tableModel);
-        userTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        userTable.setRowHeight(25);
+        userTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        userTable.setRowHeight(30);
         userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         
-        // Scroll pane
-        JScrollPane scrollPane = new JScrollPane(userTable);
-        scrollPane.setPreferredSize(new Dimension(800, 400));
+        // Set column widths for better data display
+        userTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        userTable.getColumnModel().getColumn(1).setPreferredWidth(150);  // Tên đăng nhập
+        userTable.getColumnModel().getColumn(2).setPreferredWidth(200);  // Email
+        userTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Vai trò
+        userTable.getColumnModel().getColumn(4).setPreferredWidth(150);  // Ngày tạo
+        userTable.getColumnModel().getColumn(5).setPreferredWidth(150);  // Đăng nhập cuối
+        
+        // Improve table header
+        userTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        userTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        
+        // Scroll pane with better sizing
+        scrollPane = new JScrollPane(userTable);
+        scrollPane.setPreferredSize(new Dimension(900, 450));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Enable grid lines for better readability
+        userTable.setShowGrid(true);
+        userTable.setGridColor(new Color(220, 220, 220));
+        
+        // Improve selection colors
+        userTable.setSelectionBackground(new Color(70, 130, 180));
+        userTable.setSelectionForeground(Color.WHITE);
         
         // Search field
         searchField = new JTextField(20);
@@ -80,7 +102,7 @@ public class UserManagementPanel extends JPanel {
         
         // Center panel - Table
         JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
         
         add(topPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
