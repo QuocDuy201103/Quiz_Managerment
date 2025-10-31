@@ -47,7 +47,7 @@ public class ExamManagementPanel extends JPanel {
 
     private void initializeComponents() {
         // Table
-        String[] columnNames = {"ID", "Tiêu đề", "Môn học", "Thời gian (phút)", "Số câu hỏi", "Người tạo", "Ngày tạo"};
+        String[] columnNames = {"ID", "Tiêu đề", "Môn học", "Số câu hỏi", "Người tạo", "Ngày tạo"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -63,10 +63,9 @@ public class ExamManagementPanel extends JPanel {
         examTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
         examTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // Tiêu đề
         examTable.getColumnModel().getColumn(2).setPreferredWidth(150);  // Môn học
-        examTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Thời gian
-        examTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Số câu hỏi
-        examTable.getColumnModel().getColumn(5).setPreferredWidth(120);  // Người tạo
-        examTable.getColumnModel().getColumn(6).setPreferredWidth(150);  // Ngày tạo
+        examTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Số câu hỏi
+        examTable.getColumnModel().getColumn(4).setPreferredWidth(120);  // Người tạo
+        examTable.getColumnModel().getColumn(5).setPreferredWidth(150);  // Ngày tạo
         
         // Improve table header
         examTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -226,7 +225,6 @@ public class ExamManagementPanel extends JPanel {
                 exam.getId(),
                 exam.getTitle(),
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
-                exam.getDuration(),
                 exam.getQuestionCount(),
                 exam.getCreatedByUser() != null ? exam.getCreatedByUser().getUsername() : "N/A",
                 exam.getCreatedAt().toString().substring(0, 19)
@@ -432,7 +430,6 @@ public class ExamManagementPanel extends JPanel {
     // Inner class for Exam Dialog
     private class ExamDialog extends JDialog {
         private JTextField titleField;
-        private JSpinner durationSpinner;
         private JComboBox<Subject> subjectCombo;
         private JList<Question> questionList;
         private DefaultListModel<Question> questionListModel;
@@ -451,8 +448,6 @@ public class ExamManagementPanel extends JPanel {
 
         private void initializeComponents() {
             titleField = new JTextField(30);
-            
-            durationSpinner = new JSpinner(new SpinnerNumberModel(60, 1, 300, 1));
             
             // Subject combo
             subjectCombo = new JComboBox<>();
@@ -474,7 +469,6 @@ public class ExamManagementPanel extends JPanel {
             
             Font font = new Font("Segoe UI", Font.PLAIN, 12);
             titleField.setFont(font);
-            durationSpinner.setFont(font);
             subjectCombo.setFont(font);
             questionList.setFont(font);
             saveButton.setFont(font);
@@ -486,7 +480,6 @@ public class ExamManagementPanel extends JPanel {
             // Nếu là edit mode, điền thông tin
             if (exam != null) {
                 titleField.setText(exam.getTitle());
-                durationSpinner.setValue(exam.getDuration());
                 
                 // Set subject
                 for (int i = 1; i < subjectCombo.getItemCount(); i++) { // Start from index 1 to skip "-- Chọn môn học --"
@@ -558,20 +551,14 @@ public class ExamManagementPanel extends JPanel {
             gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
             mainPanel.add(titleField, gbc);
             
-            // Duration
-            gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
-            mainPanel.add(new JLabel("Thời gian (phút):"), gbc);
-            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-            mainPanel.add(durationSpinner, gbc);
-            
             // Subject
-            gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
+            gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
             mainPanel.add(new JLabel("Môn học:"), gbc);
             gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
             mainPanel.add(subjectCombo, gbc);
             
             // Questions
-            gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
+            gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
             gbc.anchor = GridBagConstraints.NORTHWEST;
             mainPanel.add(new JLabel("Chọn câu hỏi:"), gbc);
             gbc.gridx = 1; gbc.fill = GridBagConstraints.BOTH;
@@ -604,7 +591,7 @@ public class ExamManagementPanel extends JPanel {
 
         private void saveExam() {
             String title = titleField.getText().trim();
-            int duration = (Integer) durationSpinner.getValue();
+            int duration = exam != null ? exam.getDuration() : 60; // Giữ cũ khi sửa, mặc định 60 khi thêm
             Subject selectedSubject = (Subject) subjectCombo.getSelectedItem();
             List<Question> selectedQuestions = questionList.getSelectedValuesList();
             

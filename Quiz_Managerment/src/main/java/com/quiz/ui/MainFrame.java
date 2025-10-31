@@ -292,6 +292,13 @@ public class MainFrame extends JFrame {
         if (t.contains("kết quả")) {
             return tintIcon(IconUtil.load("/images/exam-results.png", 16, 16), Color.WHITE);
         }
+        if (t.contains("thống kê") || t.contains("stat")) {
+            Icon icon = IconUtil.load("/images/chart.png", 16, 16);
+            if (icon == null) {
+                icon = IconUtil.load("/images/exam-results.png", 16, 16);
+            }
+            return tintIcon(icon, Color.WHITE);
+        }
         return null;
     }
 
@@ -368,12 +375,14 @@ public class MainFrame extends JFrame {
         tabbedPane.addTab("Quản lý câu hỏi", IconUtil.load("/images/question.png", 16, 16), new QuestionManagementPanel(currentUser));
         tabbedPane.addTab("Quản lý đề thi", IconUtil.load("/images/exam.png", 16, 16), new ExamManagementPanel(currentUser));
         tabbedPane.addTab("Kết quả thi", IconUtil.load("/images/exam-results.png", 16, 16), new ExamResultPanel());
+        tabbedPane.addTab("Thống kê", IconUtil.load("/images/chart.png", 16, 16), new StatisticsPanel());
     }
 
     private void addTeacherTabs() {
         tabbedPane.addTab("Quản lý câu hỏi", IconUtil.load("/images/question.png", 16, 16), new QuestionManagementPanel(currentUser));
         tabbedPane.addTab("Quản lý đề thi", IconUtil.load("/images/exam.png", 16, 16), new ExamManagementPanel(currentUser));
         tabbedPane.addTab("Kết quả thi", IconUtil.load("/images/exam-results.png", 16, 16), new ExamResultPanel());
+        tabbedPane.addTab("Thống kê", IconUtil.load("/images/chart.png", 16, 16), new StatisticsPanel());
     }
 
     private void addStudentTabs() {

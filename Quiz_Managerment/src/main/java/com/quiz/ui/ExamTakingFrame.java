@@ -390,36 +390,14 @@ public class ExamTakingFrame extends JFrame {
     }
 
     private void flashColor(Color color, int duration) {
-        Color originalColor = questionPanel.getBackground();
-        questionPanel.setBackground(new Color(color.getRed(), color.getGreen(), color.getBlue(), 100));
-
-        Timer flashTimer = new Timer(duration, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                questionPanel.setBackground(originalColor);
-                ((Timer) e.getSource()).stop();
-            }
-        });
-        flashTimer.start();
+        // Vô hiệu hóa hiệu ứng flash nền để tránh viền/màu phủ ngoài thẻ câu hỏi
+        // (giữ lại các phản hồi khác như màu ô trống)
+        return;
     }
 
     private void showCelebrationEffect() {
-        // Simple celebration effect for arcade mode
-        Timer celebrationTimer = new Timer(100, new ActionListener() {
-            private int count = 0;
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (count < 5) {
-                    questionPanel.setBackground(new Color(255, 215, 0, 100)); // Gold
-                    count++;
-                } else {
-                    questionPanel.setBackground(Color.WHITE);
-                    ((Timer) e.getSource()).stop();
-                }
-            }
-        });
-        celebrationTimer.start();
+        // Tắt hiệu ứng ăn mừng đổi nền để tránh viền/màu phủ ngoài thẻ câu hỏi
+        return;
     }
 
     // Removed score display updates (no score shown during exam UI)
@@ -1087,6 +1065,7 @@ public class ExamTakingFrame extends JFrame {
         private Question question;
         private JPanel questionTextPanel;
         private JPanel answerOptionsPanel;
+        private JPanel blanksRow;
         private List<BlankSlot> blankSlots;
         private String selectedAnswer = "";
 
@@ -1112,7 +1091,7 @@ public class ExamTakingFrame extends JFrame {
             qgbc.gridx = 0; qgbc.gridy = 0; qgbc.anchor = GridBagConstraints.CENTER;
             qgbc.insets = new Insets(0, 0, 10, 0);
 
-            JPanel blanksRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+            blanksRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
             blanksRow.setOpaque(false);
 
             // Parse question content and create blanks
@@ -1126,7 +1105,7 @@ public class ExamTakingFrame extends JFrame {
                     if (i < parts.length - 1) {
                         // visual underline placeholder in the sentence
                         html.append("<span style='border-bottom:2px dashed #94a3b8;padding:0 50px;'></span>");
-                        BlankSlot blank = new BlankSlot();
+                        BlankSlot blank = new BlankSlot(this);
                         blankSlots.add(blank);
                         blanksRow.add(blank);
                     }
@@ -1141,7 +1120,7 @@ public class ExamTakingFrame extends JFrame {
                 questionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
                 questionLabel.setHorizontalAlignment(SwingConstants.CENTER);
                 questionTextPanel.add(questionLabel, qgbc);
-                BlankSlot blank = new BlankSlot();
+                BlankSlot blank = new BlankSlot(this);
                 blankSlots.add(blank);
                 blanksRow.add(blank);
             }
@@ -1295,21 +1274,11 @@ public class ExamTakingFrame extends JFrame {
                         Point dropPointInQuestionPanel = SwingUtilities.convertPoint(getParent(),
                                 dropPointInLayeredPane, mainPanel.questionTextPanel);
 
-                        Component target = mainPanel.questionTextPanel.getComponentAt(dropPointInQuestionPanel);
-                        // if getComponentAt returns the container itself, try to find the nearest BlankSlot manually
-                        if (!(target instanceof BlankSlot)) {
-                            for (Component comp : mainPanel.questionTextPanel.getComponents()) {
-                                if (comp instanceof BlankSlot && comp.getBounds().contains(dropPointInQuestionPanel)) {
-                                    target = comp;
-                                    break;
-                                }
-                            }
-                        }
-
-                        BlankSlot currentSlot = null;
-                        if (target instanceof BlankSlot) {
-                            currentSlot = (BlankSlot) target;
-                        }
+                Component deepest = SwingUtilities.getDeepestComponentAt(
+                        mainPanel.questionTextPanel,
+                        dropPointInQuestionPanel.x,
+                        dropPointInQuestionPanel.y);
+                BlankSlot currentSlot = (BlankSlot) SwingUtilities.getAncestorOfClass(BlankSlot.class, deepest);
 
                         // Nếu slot hiện tại khác slot trước đó
                         if (currentSlot != lastHoveredSlot) {
@@ -1350,30 +1319,34 @@ public class ExamTakingFrame extends JFrame {
                         Point dropPointInQuestionPanel = SwingUtilities.convertPoint(layeredPane,
                                 dropPointInLayeredPane, mainPanel.questionTextPanel);
 
-                        Component target = mainPanel.questionTextPanel.getComponentAt(dropPointInQuestionPanel);
+                        Component deepest = SwingUtilities.getDeepestComponentAt(
+                                mainPanel.questionTextPanel,
+                                dropPointInQuestionPanel.x,
+                                dropPointInQuestionPanel.y);
+                        BlankSlot slot = (BlankSlot) SwingUtilities.getAncestorOfClass(BlankSlot.class, deepest);
 
                         boolean droppedOnSlot = false;
-                        if (target instanceof BlankSlot) {
-                            BlankSlot slot = (BlankSlot) target;
-                            if (slot.isEmpty()) {
-                                slot.setAnswer(optionText);
-                                setVisible(false); // Hide label after successful drop
-                                droppedOnSlot = true;
+                        if (slot != null) {
+                            if (!slot.isEmpty()) {
+                                slot.clearSlot();
+                            }
+                            slot.setAnswer(optionText, DraggableLabel.this);
+                            setVisible(false); // Hide label after successful drop
+                            droppedOnSlot = true;
 
-                                // Save the current answer immediately
-                                saveCurrentAnswer();
+                            // Save the current answer immediately
+                            saveCurrentAnswer();
 
-                                mainPanel.checkCompletion();
-                                // Make sure the slot is at the front of its parent for visibility
-                                Container parent = slot.getParent();
-                                if (parent != null) {
-                                    try {
-                                        parent.setComponentZOrder(slot, 0);
-                                    } catch (Exception ignore) {
-                                    }
-                                    parent.revalidate();
-                                    parent.repaint();
+                            mainPanel.checkCompletion();
+                            // Make sure the slot is at the front of its parent for visibility
+                            Container parent = slot.getParent();
+                            if (parent != null) {
+                                try {
+                                    parent.setComponentZOrder(slot, 0);
+                                } catch (Exception ignore) {
                                 }
+                                parent.revalidate();
+                                parent.repaint();
                             }
                         }
 
@@ -1405,9 +1378,12 @@ public class ExamTakingFrame extends JFrame {
     private class BlankSlot extends JPanel {
         private String currentAnswer;
         private JLabel label;
+        private DraggableLabel assignedLabel;
+        private FillInTheBlanksPanel owner;
 
-        public BlankSlot() {
+        public BlankSlot(FillInTheBlanksPanel owner) {
             this.currentAnswer = "";
+            this.owner = owner;
 
             setLayout(new BorderLayout());
             setBackground(new Color(240, 240, 240));
@@ -1425,6 +1401,16 @@ public class ExamTakingFrame extends JFrame {
             label.setForeground(new Color(59, 130, 246)); // Blue color for visibility
             label.setBorder(new EmptyBorder(2, 2, 2, 2));
             add(label, BorderLayout.CENTER);
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 2 && !isEmpty()) {
+                        clearSlot();
+                        saveCurrentAnswer();
+                    }
+                }
+            });
         }
 
         // Thêm 2 phương thức mới này vào trong lớp private class BlankSlot
@@ -1446,8 +1432,9 @@ public class ExamTakingFrame extends JFrame {
             return currentAnswer.isEmpty();
         }
 
-        public void setAnswer(String answer) {
+        public void setAnswer(String answer, DraggableLabel sourceLabel) {
             this.currentAnswer = answer;
+            this.assignedLabel = sourceLabel;
             label.setText(answer);
             label.setForeground(Color.BLACK);
             setBackground(new Color(220, 252, 231)); // Light green
@@ -1470,6 +1457,37 @@ public class ExamTakingFrame extends JFrame {
 
         public String getCurrentAnswer() {
             return currentAnswer;
+        }
+
+        public DraggableLabel getAssignedLabel() {
+            return assignedLabel;
+        }
+
+        public void clearSlot() {
+            // trả lại nhãn cũ về khay lựa chọn
+            if (assignedLabel != null) {
+                try {
+                    owner.answerOptionsPanel.add(assignedLabel);
+                } catch (Exception ignore) {
+                }
+                assignedLabel.setBackground(new Color(59, 130, 246));
+                assignedLabel.setVisible(true);
+            }
+
+            this.currentAnswer = "";
+            this.assignedLabel = null;
+            label.setText("Thả vào đây");
+            label.setForeground(new Color(59, 130, 246));
+            setBackground(new Color(240, 240, 240));
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createDashedBorder(Color.GRAY, 4, 2),
+                    new EmptyBorder(8, 15, 8, 15)));
+            revalidate();
+            repaint();
+            if (owner != null) {
+                owner.answerOptionsPanel.revalidate();
+                owner.answerOptionsPanel.repaint();
+            }
         }
     }
 }

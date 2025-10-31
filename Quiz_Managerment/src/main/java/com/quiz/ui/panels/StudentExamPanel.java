@@ -43,7 +43,7 @@ public class StudentExamPanel extends JPanel {
 
     private void initializeComponents() {
         // Table
-        String[] columnNames = {"ID", "Tiêu đề", "Môn học", "Thời gian (phút)", "Số câu hỏi", "Ngày tạo"};
+        String[] columnNames = {"ID", "Tiêu đề", "Môn học", "Số câu hỏi", "Ngày tạo"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -59,9 +59,8 @@ public class StudentExamPanel extends JPanel {
         examTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
         examTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // Tiêu đề
         examTable.getColumnModel().getColumn(2).setPreferredWidth(150);  // Môn học
-        examTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Thời gian
-        examTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Số câu hỏi
-        examTable.getColumnModel().getColumn(5).setPreferredWidth(150);  // Ngày tạo
+        examTable.getColumnModel().getColumn(3).setPreferredWidth(100);  // Số câu hỏi
+        examTable.getColumnModel().getColumn(4).setPreferredWidth(150);  // Ngày tạo
         
         // Improve table header
         examTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -156,7 +155,6 @@ public class StudentExamPanel extends JPanel {
                 exam.getId(),
                 exam.getTitle(),
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
-                exam.getDuration(),
                 exam.getQuestionCount(),
                 exam.getCreatedAt().toString().substring(0, 19)
             };
@@ -210,7 +208,6 @@ public class StudentExamPanel extends JPanel {
         
         int option = JOptionPane.showConfirmDialog(this, 
             "Bạn có chắc chắn muốn bắt đầu thi đề '" + selectedExam.getTitle() + "'?\n" +
-            "Thời gian: " + selectedExam.getDuration() + " phút\n" +
             "Số câu hỏi: " + examWithQuestions.getQuestions().size(), 
             "Xác nhận bắt đầu thi", JOptionPane.YES_NO_OPTION);
         

@@ -3,6 +3,7 @@ package com.quiz.dao;
 import com.quiz.database.DatabaseConnection;
 import com.quiz.model.ExamResult;
 import com.quiz.model.UserAnswer;
+import com.quiz.model.ExamAttemptStat;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -160,5 +161,30 @@ public class ExamResultDAO {
         }
         
         return result;
+    }
+
+    // Thống kê số lần làm theo từng đề thi
+    public List<ExamAttemptStat> getAttemptCountsPerExam() {
+        List<ExamAttemptStat> stats = new ArrayList<>();
+        String sql = "SELECT e.id AS examId, e.title AS examTitle, COUNT(er.id) AS attempts " +
+                "FROM Exams e " +
+                "LEFT JOIN ExamResults er ON er.examId = e.id " +
+                "GROUP BY e.id, e.title " +
+                "ORDER BY attempts DESC, e.title ASC";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                ExamAttemptStat stat = new ExamAttemptStat(
+                        rs.getInt("examId"),
+                        rs.getString("examTitle"),
+                        rs.getInt("attempts")
+                );
+                stats.add(stat);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return stats;
     }
 }
