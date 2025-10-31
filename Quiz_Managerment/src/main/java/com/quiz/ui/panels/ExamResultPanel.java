@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamResultDAO;
+import com.quiz.bus.ExamResultService;
 import com.quiz.model.ExamResult;
 
 import javax.swing.*;
@@ -21,11 +21,11 @@ public class ExamResultPanel extends JPanel {
     private JTextField searchField;
     private JButton refreshButton, viewDetailsButton;
     private JScrollPane scrollPane;
-    private ExamResultDAO examResultDAO;
+    private ExamResultService examResultService;
     private List<ExamResult> examResults;
 
     public ExamResultPanel() {
-        examResultDAO = new ExamResultDAO();
+        examResultService = new ExamResultService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -134,8 +134,20 @@ public class ExamResultPanel extends JPanel {
     }
 
     private void loadExamResults() {
-        examResults = examResultDAO.getAllExamResults();
-        updateTable();
+        List<ExamResult> results = examResultService.getAllResults();
+        tableModel.setRowCount(0);
+        for (ExamResult r : results) {
+            Object[] row = {
+                r.getId(),
+                r.getUser() != null ? r.getUser().getUsername() : r.getUserId(),
+                r.getExam() != null ? r.getExam().getTitle() : r.getExamId(),
+                r.getScore(),
+                r.getStartTime() != null ? r.getStartTime().toString().substring(0, 19) : "",
+                r.getEndTime() != null ? r.getEndTime().toString().substring(0, 19) : "",
+                r.getSubmittedAt() != null ? r.getSubmittedAt().toString().substring(0, 19) : ""
+            };
+            tableModel.addRow(row);
+        }
     }
 
     private void updateTable() {

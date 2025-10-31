@@ -9,7 +9,6 @@ import java.util.List;
 public class Exam {
     private int id;
     private String title;
-    private int duration; // phút
     private int subjectId;
     private int createdBy;
     private LocalDateTime createdAt;
@@ -22,9 +21,8 @@ public class Exam {
 
     public Exam() {}
 
-    public Exam(String title, int duration, int subjectId, int createdBy) {
+    public Exam(String title, int subjectId, int createdBy) {
         this.title = title;
-        this.duration = duration;
         this.subjectId = subjectId;
         this.createdBy = createdBy;
     }
@@ -46,13 +44,6 @@ public class Exam {
         this.title = title;
     }
 
-    public int getDuration() {
-        return duration;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
 
     public int getSubjectId() {
         return subjectId;

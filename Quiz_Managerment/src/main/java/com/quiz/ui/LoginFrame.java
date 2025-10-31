@@ -9,12 +9,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * Giao diện đăng nhập
+ * Giao diện đăng nhập (2 cột: trái xanh lá giới thiệu, phải form đăng nhập)
  */
 public class LoginFrame extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private JButton loginButton, registerButton;
+    private JButton loginButton, goRegisterButton;
     private UserDAO userDAO;
 
     public LoginFrame() {
@@ -29,82 +29,168 @@ public class LoginFrame extends JFrame {
         usernameField = new JTextField(20);
         passwordField = new JPasswordField(20);
         loginButton = new JButton("Đăng nhập");
-        registerButton = new JButton("Chưa có tài khoản? Đăng ký");
+        goRegisterButton = new JButton("Đăng ký");
         
-        // Thiết lập font
         Font font = new Font("Segoe UI", Font.PLAIN, 14);
         usernameField.setFont(font);
         passwordField.setFont(font);
-        loginButton.setFont(font);
-        registerButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        goRegisterButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         
-        // Thiết lập màu sắc
-        loginButton.setBackground(new Color(0, 123, 255));
+        loginButton.setBackground(Color.BLACK);
         loginButton.setForeground(Color.WHITE);
         loginButton.setFocusPainted(false);
+        loginButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         
-        registerButton.setBackground(Color.WHITE);
-        registerButton.setForeground(new Color(0, 123, 255));
-        registerButton.setBorderPainted(false);
-        registerButton.setFocusPainted(false);
-        registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        goRegisterButton.setBackground(Color.WHITE);
+        goRegisterButton.setForeground(Color.BLACK);
+        goRegisterButton.setFocusPainted(false);
+        goRegisterButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        goRegisterButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
+
+    private JPanel buildLeftIntroPanel() {
+        JPanel leftPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color c1 = new Color(0, 0, 0);
+                Color c2 = new Color(30, 30, 30);
+                GradientPaint gp = new GradientPaint(0, 0, c1, 0, getHeight(), c2);
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        leftPanel.setLayout(new GridBagLayout());
+        GridBagConstraints lbc = new GridBagConstraints();
+        lbc.insets = new Insets(10, 10, 10, 10);
+        lbc.gridx = 0; lbc.anchor = GridBagConstraints.CENTER;
+
+        JLabel logoLabel = new JLabel();
+        try {
+            ImageIcon icon = loadScaledLogo("/images/logo.png", 360, 260);
+            if (icon != null) {
+                logoLabel.setIcon(icon);
+            } else {
+                logoLabel.setText("QUIZ");
+                logoLabel.setForeground(Color.WHITE);
+                logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+            }
+        } catch (Exception ignore) {
+            logoLabel.setText("QUIZ");
+            logoLabel.setForeground(Color.WHITE);
+            logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        }
+
+        JLabel subtitle = new JLabel("Đăng nhập để tiếp tục");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(new Color(224, 242, 241));
+
+        JButton goLogin = new JButton("Đăng nhập");
+        goLogin.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        goLogin.setBackground(Color.BLACK);
+        goLogin.setForeground(Color.WHITE);
+        goLogin.setFocusPainted(false);
+        goLogin.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+        goLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        goLogin.addActionListener(e -> performLogin());
+
+        // Logo
+        lbc.gridy = 0; lbc.insets = new Insets(0, 10, 8, 10); leftPanel.add(logoLabel, lbc);
+        // Subtitle placed closer to logo
+        lbc.gridy = 1; lbc.insets = new Insets(0, 10, 6, 10); leftPanel.add(subtitle, lbc);
+        // Button slightly below subtitle
+        lbc.gridy = 2; lbc.insets = new Insets(8, 10, 0, 10); leftPanel.add(goLogin, lbc);
+        return leftPanel;
+    }
+
+    private JPanel buildRightLoginPanel() {
+        JPanel right = new JPanel(new GridBagLayout());
+        right.setBackground(Color.WHITE);
+        right.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.gridx = 0; gbc.anchor = GridBagConstraints.CENTER; gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel title = new JLabel("Đăng nhập");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(new Color(0, 0, 0));
+
+        JLabel userLabel = new JLabel("Username");
+        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        userLabel.setForeground(new Color(100, 116, 139));
+        JPanel userField = withIcon(usernameField, "/images/user.png");
+        
+        JLabel passLabel = new JLabel("Password");
+        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        passLabel.setForeground(new Color(100, 116, 139));
+        JPanel passField = withIcon(passwordField, "/images/padlock.png");
+
+        gbc.gridy = 0; right.add(title, gbc);
+        gbc.gridy = 1; right.add(userLabel, gbc);
+        gbc.gridy = 2; right.add(userField, gbc);
+        gbc.gridy = 3; right.add(passLabel, gbc);
+        gbc.gridy = 4; right.add(passField, gbc);
+        gbc.gridy = 5; right.add(loginButton, gbc);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+        bottom.setOpaque(false);
+        bottom.add(new JLabel("Không có tài khoản?"));
+        bottom.add(goRegisterButton);
+        gbc.gridy = 6; right.add(bottom, gbc);
+        return right;
+    }
+
+    private JPanel withIcon(JComponent field, String resourcePath) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        JLabel iconLabel = new JLabel();
+        iconLabel.setOpaque(true);
+        iconLabel.setBackground(new Color(248, 250, 252));
+        iconLabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 0, new Color(203, 213, 225)));
+        try {
+            java.net.URL url = getClass().getResource(resourcePath);
+            if (url != null) {
+                Image img = new ImageIcon(url).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+                iconLabel.setIcon(new ImageIcon(img));
+                iconLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 1, 1, 0, new Color(203, 213, 225)),
+                    BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                ));
+            } else {
+                iconLabel.setText("  ");
+            }
+        } catch (Exception ignore) {
+            iconLabel.setText("  ");
+        }
+        field.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 1, new Color(203, 213, 225)));
+        panel.add(iconLabel, BorderLayout.WEST);
+        panel.add(field, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private ImageIcon loadScaledLogo(String resourcePath, int maxWidth, int maxHeight) {
+        java.net.URL url = getClass().getResource(resourcePath);
+        if (url == null) return null;
+        ImageIcon raw = new ImageIcon(url);
+        int w = raw.getIconWidth();
+        int h = raw.getIconHeight();
+        if (w <= 0 || h <= 0) return null;
+        double scale = Math.min((double) maxWidth / w, (double) maxHeight / h);
+        int nw = (int) Math.round(w * scale);
+        int nh = (int) Math.round(h * scale);
+        Image scaled = raw.getImage().getScaledInstance(nw, nh, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaled);
     }
 
     private void setupLayout() {
         setLayout(new BorderLayout());
-        
-        // Panel chính
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
-        mainPanel.setBackground(Color.WHITE);
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        
-        // Tiêu đề
-        JLabel titleLabel = new JLabel("HỆ THỐNG QUẢN LÝ TRẮC NGHIỆM");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setForeground(new Color(0, 123, 255));
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        mainPanel.add(titleLabel, gbc);
-        
-        // Khoảng trống
-        gbc.gridy = 1;
-        mainPanel.add(Box.createVerticalStrut(30), gbc);
-        
-        // Tên đăng nhập
-        JLabel usernameLabel = new JLabel("Tên đăng nhập:");
-        usernameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(usernameLabel, gbc);
-        
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(usernameField, gbc);
-        
-        // Mật khẩu
-        JLabel passwordLabel = new JLabel("Mật khẩu:");
-        passwordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 3; gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(passwordLabel, gbc);
-        
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(passwordField, gbc);
-        
-        // Nút đăng nhập
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        loginButton.setPreferredSize(new Dimension(200, 40));
-        mainPanel.add(loginButton, gbc);
-        
-        // Nút đăng ký
-        gbc.gridy = 5;
-        gbc.fill = GridBagConstraints.NONE;
-        mainPanel.add(registerButton, gbc);
-        
-        add(mainPanel, BorderLayout.CENTER);
+        JPanel container = new JPanel(new GridLayout(1, 2));
+        container.add(buildLeftIntroPanel());
+        container.add(buildRightLoginPanel());
+        add(container, BorderLayout.CENTER);
     }
 
     private void setupEventHandlers() {
@@ -115,18 +201,16 @@ public class LoginFrame extends JFrame {
             }
         });
         
-        registerButton.addActionListener(new ActionListener() {
+        goRegisterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openRegisterFrame();
             }
         });
         
-        // Đăng nhập bằng Enter
         KeyStroke enterKeyStroke = KeyStroke.getKeyStroke("ENTER");
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
-        
         inputMap.put(enterKeyStroke, "login");
         actionMap.put("login", new AbstractAction() {
             @Override
@@ -146,8 +230,7 @@ public class LoginFrame extends JFrame {
             return;
         }
         
-        // Hiển thị loading
-        loginButton.setText("Đang đăng nhập...");
+        loginButton.setText("Signing in...");
         loginButton.setEnabled(false);
         
         // Thực hiện đăng nhập trong thread riêng

@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamDAO;
+import com.quiz.bus.ExamService;
 import com.quiz.model.Exam;
 import com.quiz.model.User;
 import com.quiz.ui.ExamTakingFrame;
@@ -24,7 +24,7 @@ public class StudentExamPanel extends JPanel {
     private JTextField searchField;
     private JButton startExamButton, refreshButton;
     private JScrollPane scrollPane;
-    private ExamDAO examDAO;
+    private ExamService examService;
     private List<Exam> exams;
     private User currentUser;
 
@@ -34,7 +34,7 @@ public class StudentExamPanel extends JPanel {
 
     public StudentExamPanel(User currentUser) {
         this.currentUser = currentUser;
-        examDAO = new ExamDAO();
+        examService = new ExamService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -140,7 +140,7 @@ public class StudentExamPanel extends JPanel {
     }
 
     private void loadExams() {
-        exams = examDAO.getAllExams();
+        exams = examService.getAllExams();
         updateTable();
     }
 
@@ -199,7 +199,7 @@ public class StudentExamPanel extends JPanel {
         }
         
         Exam selectedExam = exams.get(selectedRow);
-        Exam examWithQuestions = examDAO.getExamById(selectedExam.getId());
+        Exam examWithQuestions = examService.getExamById(selectedExam.getId());
         
         if (examWithQuestions == null || examWithQuestions.getQuestions() == null || examWithQuestions.getQuestions().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Đề thi này chưa có câu hỏi!", "Lỗi", JOptionPane.ERROR_MESSAGE);

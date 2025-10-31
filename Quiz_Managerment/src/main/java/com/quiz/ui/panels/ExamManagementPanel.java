@@ -1,8 +1,8 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamDAO;
-import com.quiz.dao.QuestionDAO;
-import com.quiz.dao.SubjectDAO;
+import com.quiz.bus.ExamService;
+import com.quiz.bus.QuestionService;
+import com.quiz.bus.SubjectService;
 import com.quiz.model.*;
 
 import javax.swing.*;
@@ -24,9 +24,9 @@ public class ExamManagementPanel extends JPanel {
     private JComboBox<Subject> subjectFilterCombo;
     private JButton addButton, editButton, deleteButton, refreshButton, viewButton, exportButton;
     private JScrollPane scrollPane;
-    private ExamDAO examDAO;
-    private SubjectDAO subjectDAO;
-    private QuestionDAO questionDAO;
+    private ExamService examService;
+    private SubjectService subjectService;
+    private QuestionService questionService;
     private List<Exam> exams;
     private User currentUser;
 
@@ -36,9 +36,9 @@ public class ExamManagementPanel extends JPanel {
 
     public ExamManagementPanel(User currentUser) {
         this.currentUser = currentUser;
-        examDAO = new ExamDAO();
-        subjectDAO = new SubjectDAO();
-        questionDAO = new QuestionDAO();
+        examService = new ExamService();
+        subjectService = new SubjectService();
+        questionService = new QuestionService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -91,7 +91,7 @@ public class ExamManagementPanel extends JPanel {
         // Subject filter combo
         subjectFilterCombo = new JComboBox<>();
         subjectFilterCombo.addItem(new Subject(0, "Tất cả môn học", ""));
-        List<Subject> subjects = subjectDAO.getAllSubjects();
+        List<Subject> subjects = subjectService.getAllSubjects();
         for (Subject subject : subjects) {
             subjectFilterCombo.addItem(subject);
         }
@@ -182,7 +182,7 @@ public class ExamManagementPanel extends JPanel {
     }
 
     private void loadExams() {
-        exams = examDAO.getAllExams();
+        exams = examService.getAllExams();
         updateTable();
     }
 
@@ -255,7 +255,7 @@ public class ExamManagementPanel extends JPanel {
             return;
         }
         Exam selectedExam = exams.get(selectedRow);
-        Exam examWithQuestions = examDAO.getExamById(selectedExam.getId());
+        Exam examWithQuestions = examService.getExamById(selectedExam.getId());
         if (examWithQuestions == null || examWithQuestions.getQuestions() == null || examWithQuestions.getQuestions().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Đề thi không có câu hỏi để xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
@@ -310,7 +310,7 @@ public class ExamManagementPanel extends JPanel {
             cs.newLine();
             writeWrapped(cs, "Môn học: " + (examWithQuestions.getSubject() != null ? examWithQuestions.getSubject().getName() : "N/A"), font, 12, width);
             cs.newLine();
-            writeWrapped(cs, "Thời gian: " + examWithQuestions.getDuration() + " phút", font, 12, width);
+            // Không còn trường thời gian trong Exam
             cs.newLine();
             cs.newLine();
 
@@ -404,7 +404,7 @@ public class ExamManagementPanel extends JPanel {
             "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         
         if (option == JOptionPane.YES_OPTION) {
-            if (examDAO.deleteExam(selectedExam.getId())) {
+            if (examService.deleteExam(selectedExam.getId())) {
                 JOptionPane.showMessageDialog(this, "Xóa đề thi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadExams();
             } else {
@@ -421,7 +421,7 @@ public class ExamManagementPanel extends JPanel {
         }
         
         Exam selectedExam = exams.get(selectedRow);
-        Exam examWithQuestions = examDAO.getExamById(selectedExam.getId());
+        Exam examWithQuestions = examService.getExamById(selectedExam.getId());
         
         ExamDetailsDialog dialog = new ExamDetailsDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Chi tiết đề thi", examWithQuestions);
         dialog.setVisible(true);
@@ -453,7 +453,7 @@ public class ExamManagementPanel extends JPanel {
             subjectCombo = new JComboBox<>();
             // Add default "select subject" option
             subjectCombo.addItem(new Subject(-1, "-- Chọn môn học --", ""));
-            List<Subject> subjects = subjectDAO.getAllSubjects();
+            List<Subject> subjects = subjectService.getAllSubjects();
             for (Subject subject : subjects) {
                 subjectCombo.addItem(subject);
             }
@@ -508,7 +508,7 @@ public class ExamManagementPanel extends JPanel {
         }
 
         private void loadQuestions() {
-            List<Question> questions = questionDAO.getAllQuestions();
+            List<Question> questions = questionService.getAllQuestions();
             questionListModel.clear();
             for (Question question : questions) {
                 questionListModel.addElement(question);
@@ -524,7 +524,7 @@ public class ExamManagementPanel extends JPanel {
                 return;
             }
             
-            List<Question> questions = questionDAO.getAllQuestions();
+            List<Question> questions = questionService.getAllQuestions();
             questionListModel.clear();
             
             for (Question question : questions) {
@@ -591,7 +591,6 @@ public class ExamManagementPanel extends JPanel {
 
         private void saveExam() {
             String title = titleField.getText().trim();
-            int duration = exam != null ? exam.getDuration() : 60; // Giữ cũ khi sửa, mặc định 60 khi thêm
             Subject selectedSubject = (Subject) subjectCombo.getSelectedItem();
             List<Question> selectedQuestions = questionList.getSelectedValuesList();
             
@@ -619,14 +618,13 @@ public class ExamManagementPanel extends JPanel {
             if (exam == null) {
                 // Add new exam
                 int createdBy = (currentUser != null) ? currentUser.getId() : 1; // Fallback to admin if no current user
-                Exam newExam = new Exam(title, duration, selectedSubject.getId(), createdBy);
-                success = examDAO.addExam(newExam, questionIds);
+                Exam newExam = new Exam(title, selectedSubject.getId(), createdBy);
+                success = examService.createExam(newExam, selectedQuestions);
             } else {
                 // Update existing exam
                 exam.setTitle(title);
-                exam.setDuration(duration);
                 exam.setSubjectId(selectedSubject.getId());
-                success = examDAO.updateExam(exam, questionIds);
+                success = examService.updateExam(exam, selectedQuestions);
             }
             
             if (success) {
@@ -703,11 +701,6 @@ public class ExamManagementPanel extends JPanel {
             infoPanel.add(new JLabel(exam.getSubject() != null ? exam.getSubject().getName() : "N/A"), gbc);
             
             gbc.gridx = 0; gbc.gridy = 2;
-            infoPanel.add(new JLabel("Thời gian:"), gbc);
-            gbc.gridx = 1;
-            infoPanel.add(new JLabel(exam.getDuration() + " phút"), gbc);
-            
-            gbc.gridx = 0; gbc.gridy = 3;
             infoPanel.add(new JLabel("Số câu hỏi:"), gbc);
             gbc.gridx = 1;
             infoPanel.add(new JLabel(String.valueOf(exam.getQuestions() != null ? exam.getQuestions().size() : 0)), gbc);

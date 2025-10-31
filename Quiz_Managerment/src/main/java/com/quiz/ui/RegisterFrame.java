@@ -11,13 +11,13 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
- * Giao diện đăng ký tài khoản
+ * Giao diện đăng ký tài khoản (2 cột: trái chào mừng, phải form tạo tài khoản)
  */
 public class RegisterFrame extends JFrame {
     private JTextField usernameField, emailField;
     private JPasswordField passwordField, confirmPasswordField;
     private JComboBox<Role> roleComboBox;
-    private JButton registerButton, cancelButton, loginButton;
+    private JButton registerButton, cancelButton, goLoginButton;
     private UserDAO userDAO;
 
     public RegisterFrame() {
@@ -26,6 +26,48 @@ public class RegisterFrame extends JFrame {
         setupLayout();
         setupEventHandlers();
         setupFrame();
+    }
+
+    private ImageIcon loadScaledLogo(String resourcePath, int maxWidth, int maxHeight) {
+        java.net.URL url = getClass().getResource(resourcePath);
+        if (url == null) return null;
+        ImageIcon raw = new ImageIcon(url);
+        int w = raw.getIconWidth();
+        int h = raw.getIconHeight();
+        if (w <= 0 || h <= 0) return null;
+        double scale = Math.min((double) maxWidth / w, (double) maxHeight / h);
+        int nw = (int) Math.round(w * scale);
+        int nh = (int) Math.round(h * scale);
+        Image scaled = raw.getImage().getScaledInstance(nw, nh, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaled);
+    }
+
+    private JPanel withIcon(JComponent field, String resourcePath) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        JLabel iconLabel = new JLabel();
+        iconLabel.setOpaque(true);
+        iconLabel.setBackground(new Color(248, 250, 252));
+        iconLabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 0, new Color(203, 213, 225)));
+        try {
+            java.net.URL url = getClass().getResource(resourcePath);
+            if (url != null) {
+                Image img = new ImageIcon(url).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+                iconLabel.setIcon(new ImageIcon(img));
+                iconLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 1, 1, 0, new Color(203, 213, 225)),
+                    BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                ));
+            } else {
+                iconLabel.setText("  ");
+            }
+        } catch (Exception ignore) {
+            iconLabel.setText("  ");
+        }
+        field.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 1, new Color(203, 213, 225)));
+        panel.add(iconLabel, BorderLayout.WEST);
+        panel.add(field, BorderLayout.CENTER);
+        return panel;
     }
 
     private void initializeComponents() {
@@ -41,8 +83,8 @@ public class RegisterFrame extends JFrame {
         
         // Buttons
         registerButton = new JButton("Đăng ký");
-        cancelButton = new JButton("Hủy");
-        loginButton = new JButton("Đã có tài khoản? Đăng nhập");
+        cancelButton = new JButton("THOÁT");
+        goLoginButton = new JButton("Đăng nhập");
         
         // Thiết lập font
         Font font = new Font("Segoe UI", Font.PLAIN, 14);
@@ -51,113 +93,127 @@ public class RegisterFrame extends JFrame {
         passwordField.setFont(font);
         confirmPasswordField.setFont(font);
         roleComboBox.setFont(font);
-        registerButton.setFont(font);
+        registerButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         cancelButton.setFont(font);
-        loginButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        goLoginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         
         // Thiết lập màu sắc
-        registerButton.setBackground(new Color(40, 167, 69));
+        registerButton.setBackground(Color.BLACK);
         registerButton.setForeground(Color.WHITE);
         registerButton.setFocusPainted(false);
+        registerButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         
-        cancelButton.setBackground(new Color(108, 117, 125));
+        cancelButton.setBackground(Color.BLACK);
         cancelButton.setForeground(Color.WHITE);
         cancelButton.setFocusPainted(false);
         
-        loginButton.setBackground(Color.WHITE);
-        loginButton.setForeground(new Color(0, 123, 255));
-        loginButton.setBorderPainted(false);
-        loginButton.setFocusPainted(false);
-        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        goLoginButton.setBackground(Color.BLACK);
+        goLoginButton.setForeground(Color.WHITE);
+        goLoginButton.setFocusPainted(false);
+        goLoginButton.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+        goLoginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
     private void setupLayout() {
         setLayout(new BorderLayout());
+        JPanel container = new JPanel(new GridLayout(1, 2));
         
-        // Panel chính
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
-        mainPanel.setBackground(Color.WHITE);
+        // Left gradient welcome panel
+        JPanel left = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color c1 = new Color(0, 0, 0);
+                Color c2 = new Color(30, 30, 30);
+                GradientPaint gp = new GradientPaint(0, 0, c1, 0, getHeight(), c2);
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        left.setLayout(new GridBagLayout());
+        GridBagConstraints lbc = new GridBagConstraints();
+        lbc.insets = new Insets(10, 10, 10, 10);
+        lbc.gridx = 0; lbc.anchor = GridBagConstraints.CENTER;
+        JLabel welcome = new JLabel();
+        try {
+            ImageIcon icon = loadScaledLogo("/images/logo.png", 360, 260);
+            if (icon != null) {
+                welcome.setIcon(icon);
+            } else {
+                welcome.setText("QUIZ");
+                welcome.setForeground(Color.WHITE);
+                welcome.setFont(new Font("Segoe UI", Font.BOLD, 26));
+            }
+        } catch (Exception ignore) {
+            welcome.setText("QUIZ");
+            welcome.setForeground(Color.WHITE);
+            welcome.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        }
+        JLabel subtitle = new JLabel("Đăng ký tài khoản để tiếp tục");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(new Color(224, 242, 241));
+        // Logo
+        lbc.gridy = 0; lbc.insets = new Insets(0, 10, 8, 10); left.add(welcome, lbc);
+        // Subtitle closer to logo
+        lbc.gridy = 1; lbc.insets = new Insets(0, 10, 6, 10); left.add(subtitle, lbc);
+        // Button slightly below subtitle
+        lbc.gridy = 2; lbc.insets = new Insets(8, 10, 0, 10); left.add(goLoginButton, lbc);
         
+        // Right create account form panel
+        JPanel right = new JPanel(new GridBagLayout());
+        right.setBackground(Color.WHITE);
+        right.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.gridx = 0; gbc.anchor = GridBagConstraints.CENTER; gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        // Tiêu đề
-        JLabel titleLabel = new JLabel("ĐĂNG KÝ TÀI KHOẢN");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setForeground(new Color(0, 123, 255));
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        mainPanel.add(titleLabel, gbc);
+        JLabel title = new JLabel("Tạo tài khoản");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(new Color(0, 0, 0));
         
-        // Khoảng trống
-        gbc.gridy = 1;
-        mainPanel.add(Box.createVerticalStrut(20), gbc);
+        usernameField.setToolTipText("Tên đăng nhập");
+        emailField.setToolTipText("Email");
+        passwordField.setToolTipText("Mật khẩu");
+        confirmPasswordField.setToolTipText("Xác nhận mật khẩu");
         
-        // Tên đăng nhập
-        JLabel usernameLabel = new JLabel("Tên đăng nhập:");
-        usernameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(usernameLabel, gbc);
+        JLabel nameLabel = new JLabel("Tên đăng nhập");
+        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        nameLabel.setForeground(new Color(100, 116, 139));
         
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(usernameField, gbc);
+        JLabel emailLabel = new JLabel("Email");
+        emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        emailLabel.setForeground(new Color(100, 116, 139));
         
-        // Email
-        JLabel emailLabel = new JLabel("Email:");
-        emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 3; gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(emailLabel, gbc);
+        JLabel passLabel = new JLabel("Mật khẩu");
+        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        passLabel.setForeground(new Color(100, 116, 139));
         
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(emailField, gbc);
+        JLabel confirmLabel = new JLabel("Xác nhận mật khẩu");
+        confirmLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        confirmLabel.setForeground(new Color(100, 116, 139));
         
-        // Mật khẩu
-        JLabel passwordLabel = new JLabel("Mật khẩu:");
-        passwordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 4; gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(passwordLabel, gbc);
+        JLabel roleLabel = new JLabel("Vai trò");
+        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        roleLabel.setForeground(new Color(100, 116, 139));
         
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(passwordField, gbc);
+        gbc.gridy = 0; right.add(title, gbc);
+        gbc.gridy = 1; right.add(nameLabel, gbc);
+        gbc.gridy = 2; right.add(withIcon(usernameField, "/images/user.png"), gbc);
+        gbc.gridy = 3; right.add(emailLabel, gbc);
+        gbc.gridy = 4; right.add(withIcon(emailField, "/images/mail.png"), gbc);
+        gbc.gridy = 5; right.add(passLabel, gbc);
+        gbc.gridy = 6; right.add(withIcon(passwordField, "/images/padlock.png"), gbc);
+        gbc.gridy = 7; right.add(confirmLabel, gbc);
+        gbc.gridy = 8; right.add(withIcon(confirmPasswordField, "/images/padlock.png"), gbc);
+        gbc.gridy = 9; right.add(roleLabel, gbc);
+        gbc.gridy = 10; right.add(roleComboBox, gbc);
+        gbc.gridy = 11; right.add(registerButton, gbc);
         
-        // Xác nhận mật khẩu
-        JLabel confirmPasswordLabel = new JLabel("Xác nhận mật khẩu:");
-        confirmPasswordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 5; gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(confirmPasswordLabel, gbc);
-        
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(confirmPasswordField, gbc);
-        
-        // Vai trò
-        JLabel roleLabel = new JLabel("Vai trò:");
-        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0; gbc.gridy = 6; gbc.anchor = GridBagConstraints.EAST;
-        mainPanel.add(roleLabel, gbc);
-        
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(roleComboBox, gbc);
-        
-        // Nút đăng ký và hủy
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(Color.WHITE);
-        buttonPanel.add(registerButton);
-        buttonPanel.add(cancelButton);
-        
-        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        registerButton.setPreferredSize(new Dimension(200, 40));
-        mainPanel.add(buttonPanel, gbc);
-        
-        // Nút đăng nhập
-        gbc.gridy = 8;
-        gbc.fill = GridBagConstraints.NONE;
-        mainPanel.add(loginButton, gbc);
-        
-        add(mainPanel, BorderLayout.CENTER);
+        container.add(left);
+        container.add(right);
+        add(container, BorderLayout.CENTER);
     }
 
     private void setupEventHandlers() {
@@ -175,7 +231,7 @@ public class RegisterFrame extends JFrame {
             }
         });
         
-        loginButton.addActionListener(new ActionListener() {
+        goLoginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openLoginFrame();

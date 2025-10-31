@@ -31,6 +31,7 @@ public class ExamTakingFrame extends JFrame {
     private LocalDateTime startTime;
     private Timer timer;
     private int timeRemaining; // in seconds
+    private int totalAllocatedTimeSeconds; // total allocated time based on mode
     private QuestionDAO questionDAO;
     private User currentUser;
     
@@ -48,6 +49,7 @@ public class ExamTakingFrame extends JFrame {
     private QuestionNavigationPanel navigationPanel;
     // Removed score panel/label per requirement
     private JButton hintButton;
+    @SuppressWarnings("unused")
     private int currentStreak = 0;
     private int totalCorrect = 0;
     private boolean showImmediateFeedback = false; // Disabled for traditional quiz
@@ -70,11 +72,12 @@ public class ExamTakingFrame extends JFrame {
         this.questions = exam.getQuestions();
         this.userAnswers = new ArrayList<>();
         this.startTime = LocalDateTime.now();
-        this.timeRemaining = exam.getDuration() * 60; // Convert minutes to seconds
+        this.timeRemaining = 0;
         this.questionDAO = new QuestionDAO();
 
         // Apply mode-specific settings
         applyModeSettings();
+        this.totalAllocatedTimeSeconds = timeRemaining;
         
         initializeComponents();
         setupLayout();
@@ -828,7 +831,7 @@ public class ExamTakingFrame extends JFrame {
                 // Show enhanced result dialog
                 ExamResultDialog resultDialog = new ExamResultDialog(
                         this, score, questions.size(), totalCorrect,
-                        (exam.getDuration() * 60) - timeRemaining, exam.getDuration() * 60);
+                        (totalAllocatedTimeSeconds - timeRemaining), totalAllocatedTimeSeconds);
                 resultDialog.setVisible(true);
             } catch (Exception e) {
                 // Fallback to simple message
@@ -1002,6 +1005,7 @@ public class ExamTakingFrame extends JFrame {
         private List<JButton> questionButtons;
         private int currentQuestion;
 
+        @SuppressWarnings("unused")
         public QuestionNavigationPanel(int totalQuestions) {
             this.questionButtons = new ArrayList<>();
             this.currentQuestion = 0;
@@ -1067,7 +1071,6 @@ public class ExamTakingFrame extends JFrame {
         private JPanel answerOptionsPanel;
         private JPanel blanksRow;
         private List<BlankSlot> blankSlots;
-        private String selectedAnswer = "";
 
         public FillInTheBlanksPanel(Question question) {
             this.question = question;
@@ -1218,6 +1221,7 @@ public class ExamTakingFrame extends JFrame {
         private boolean isDragging = false;
         private Point dragOffset;
         private Container originalParent;
+        @SuppressWarnings("unused")
         private FillInTheBlanksPanel mainPanel;
         private BlankSlot lastHoveredSlot = null;
 
@@ -1459,9 +1463,7 @@ public class ExamTakingFrame extends JFrame {
             return currentAnswer;
         }
 
-        public DraggableLabel getAssignedLabel() {
-            return assignedLabel;
-        }
+        
 
         public void clearSlot() {
             // trả lại nhãn cũ về khay lựa chọn

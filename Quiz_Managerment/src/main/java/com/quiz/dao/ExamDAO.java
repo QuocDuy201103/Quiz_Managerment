@@ -27,7 +27,7 @@ public class ExamDAO {
                     "LEFT JOIN Subjects s ON e.subjectId = s.id " +
                     "LEFT JOIN Users u ON e.createdBy = u.id " +
                     "LEFT JOIN Exam_Questions eq ON e.id = eq.examId " +
-                    "GROUP BY e.id, e.title, e.duration, e.subjectId, e.createdBy, e.createdAt, s.name, u.username " +
+                    "GROUP BY e.id, e.title, e.subjectId, e.createdBy, e.createdAt, s.name, u.username " +
                     "ORDER BY e.createdAt DESC";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql);
@@ -72,13 +72,12 @@ public class ExamDAO {
 
     // Thêm đề thi mới
     public boolean addExam(Exam exam, List<Integer> questionIds) {
-        String sql = "INSERT INTO Exams (title, duration, subjectId, createdBy) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Exams (title, subjectId, createdBy) VALUES (?, ?, ?)";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, exam.getTitle());
-            stmt.setInt(2, exam.getDuration());
-            stmt.setInt(3, exam.getSubjectId());
-            stmt.setInt(4, exam.getCreatedBy());
+            stmt.setInt(2, exam.getSubjectId());
+            stmt.setInt(3, exam.getCreatedBy());
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -97,13 +96,12 @@ public class ExamDAO {
 
     // Cập nhật đề thi
     public boolean updateExam(Exam exam, List<Integer> questionIds) {
-        String sql = "UPDATE Exams SET title = ?, duration = ?, subjectId = ? WHERE id = ?";
+        String sql = "UPDATE Exams SET title = ?, subjectId = ? WHERE id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, exam.getTitle());
-            stmt.setInt(2, exam.getDuration());
-            stmt.setInt(3, exam.getSubjectId());
-            stmt.setInt(4, exam.getId());
+            stmt.setInt(2, exam.getSubjectId());
+            stmt.setInt(3, exam.getId());
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -282,7 +280,6 @@ public class ExamDAO {
         Exam exam = new Exam();
         exam.setId(rs.getInt("id"));
         exam.setTitle(rs.getString("title"));
-        exam.setDuration(rs.getInt("duration"));
         exam.setSubjectId(rs.getInt("subjectId"));
         exam.setCreatedBy(rs.getInt("createdBy"));
         exam.setCreatedAt(rs.getTimestamp("createdAt").toLocalDateTime());

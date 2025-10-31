@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamResultDAO;
+import com.quiz.bus.ExamResultService;
 import com.quiz.model.ExamResult;
 import com.quiz.model.User;
 
@@ -17,7 +17,7 @@ public class MyExamResultPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JButton refreshButton, viewDetailsButton;
     private JScrollPane scrollPane;
-    private ExamResultDAO examResultDAO;
+    private ExamResultService examResultService;
     private List<ExamResult> myExamResults;
     private User currentUser;
 
@@ -27,7 +27,7 @@ public class MyExamResultPanel extends JPanel {
 
     public MyExamResultPanel(User currentUser) {
         this.currentUser = currentUser;
-        examResultDAO = new ExamResultDAO();
+        examResultService = new ExamResultService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -125,7 +125,7 @@ public class MyExamResultPanel extends JPanel {
 
     private void loadMyExamResults() {
         int userId = (currentUser != null) ? currentUser.getId() : 1;
-        myExamResults = examResultDAO.getExamResultsByUser(userId);
+        myExamResults = examResultService.getResultsByUserId(userId);
         updateTable();
     }
 
