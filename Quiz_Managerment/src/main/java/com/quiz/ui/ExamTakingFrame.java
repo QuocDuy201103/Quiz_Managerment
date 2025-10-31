@@ -46,8 +46,7 @@ public class ExamTakingFrame extends JFrame {
     // Enhanced UI Components
     private CircularTimerPanel timerPanel;
     private QuestionNavigationPanel navigationPanel;
-    private JPanel scorePanel;
-    private JLabel scoreLabel;
+    // Removed score panel/label per requirement
     private JButton hintButton;
     private int currentStreak = 0;
     private int totalCorrect = 0;
@@ -167,19 +166,9 @@ public class ExamTakingFrame extends JFrame {
 
         // Enhanced components
         timerPanel = new CircularTimerPanel(timeRemaining);
-        navigationPanel = new QuestionNavigationPanel(questions.size());
+        // navigationPanel removed per request (hide question number buttons)
 
-        // Score panel
-        scorePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        scoreLabel = new JLabel("Điểm: 0");
-        // streakLabel = new JLabel("Chuỗi: 0");
-        scoreLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        // streakLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        scoreLabel.setForeground(new Color(34, 197, 94));
-        // streakLabel.setForeground(new Color(245, 158, 11));
-        scorePanel.add(scoreLabel);
-        scorePanel.add(Box.createHorizontalStrut(20));
-        // scorePanel.add(streakLabel);
+        // Score UI removed
     }
 
     private JRadioButton createStyledRadioButton() {
@@ -315,8 +304,7 @@ public class ExamTakingFrame extends JFrame {
             currentStreak = 0;
         }
 
-        // Update score display
-        updateScoreDisplay();
+        // No score display during exam UI
 
         // Don't mark answers in navigation panel during exam
         // This will be done after submission
@@ -434,11 +422,7 @@ public class ExamTakingFrame extends JFrame {
         celebrationTimer.start();
     }
 
-    private void updateScoreDisplay() {
-        // Hide score and streak during exam - only show after submission
-        scoreLabel.setText("Điểm: --");
-        // streakLabel.setText("🔥 Chuỗi: --");
-    }
+    // Removed score display updates (no score shown during exam UI)
 
     private void setupLayout() {
         setLayout(new BorderLayout());
@@ -450,8 +434,6 @@ public class ExamTakingFrame extends JFrame {
         
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         leftPanel.add(questionNumberLabel);
-        leftPanel.add(Box.createHorizontalStrut(20));
-        leftPanel.add(scorePanel);
         leftPanel.setBackground(topPanel.getBackground());
         
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -464,7 +446,7 @@ public class ExamTakingFrame extends JFrame {
         // Progress bar
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.setBackground(new Color(248, 250, 252));
-        progressPanel.setBorder(new EmptyBorder(0, 20, 16, 20));
+        progressPanel.setBorder(new EmptyBorder(0, 20, 8, 20));
         progressPanel.add(progressBar, BorderLayout.CENTER);
         progressPanel.add(progressTextLabel, BorderLayout.SOUTH);
 
@@ -476,7 +458,7 @@ public class ExamTakingFrame extends JFrame {
         questionPanel = new JPanel(new BorderLayout());
         questionPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(229, 231, 235), 1),
-                new EmptyBorder(24, 24, 24, 24)));
+                new EmptyBorder(16, 24, 16, 24)));
         questionPanel.setBackground(Color.WHITE);
         
         JPanel questionContentPanel = new JPanel(new BorderLayout());
@@ -494,12 +476,6 @@ public class ExamTakingFrame extends JFrame {
         questionContentPanel.add(optionsPanel, BorderLayout.CENTER);
         questionPanel.add(questionContentPanel, BorderLayout.CENTER);
 
-        // Question navigation panel
-        JPanel navPanel = new JPanel(new BorderLayout());
-        navPanel.setBackground(mainContent.getBackground());
-        navPanel.setBorder(new EmptyBorder(12, 20, 16, 20));
-        navPanel.add(navigationPanel, BorderLayout.CENTER);
-
         mainContent.add(progressPanel, BorderLayout.NORTH);
 
         // Center the question card neatly
@@ -509,10 +485,9 @@ public class ExamTakingFrame extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.NORTH;
-        gbc.insets = new Insets(16, 20, 16, 20);
+        gbc.insets = new Insets(8, 20, 8, 20);
         centerWrap.add(questionPanel, gbc);
         mainContent.add(centerWrap, BorderLayout.CENTER);
-        mainContent.add(navPanel, BorderLayout.SOUTH);
         
         // Bottom panel - Navigation buttons
         buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
@@ -938,9 +913,7 @@ public class ExamTakingFrame extends JFrame {
             }
         }
 
-        // Update final score display
-        scoreLabel.setText("Điểm: " + totalCorrect + "/" + totalQuestions);
-        // streakLabel.setText("🔥 Kết quả: " + String.format("%.1f/10", score));
+        // No score label in exam UI; results are shown via dialog only
     }
 
     private double calculateScore() {
@@ -1056,7 +1029,7 @@ public class ExamTakingFrame extends JFrame {
             this.currentQuestion = 0;
 
             setLayout(new GridLayout(0, 5, 5, 5));
-            setBorder(BorderFactory.createTitledBorder("Điều hướng câu hỏi"));
+            setBorder(BorderFactory.createTitledBorder(""));
 
             for (int i = 0; i < totalQuestions; i++) {
                 JButton btn = new JButton(String.valueOf(i + 1));
@@ -1222,7 +1195,7 @@ public class ExamTakingFrame extends JFrame {
 
             // Thêm các panel vào FillInTheBlanksPanel theo chiều dọc
             add(topPanel);
-            add(Box.createRigidArea(new Dimension(0, 30))); // Thêm khoảng trống giữa 2 panel
+            add(Box.createRigidArea(new Dimension(0, 10))); // Giảm khoảng trống để dịch nội dung lên
             add(bottomPanel);
         }
 

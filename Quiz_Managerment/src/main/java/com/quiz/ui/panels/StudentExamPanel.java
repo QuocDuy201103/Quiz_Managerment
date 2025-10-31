@@ -8,7 +8,11 @@ import com.quiz.ui.QuizModeSelector;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -122,6 +126,18 @@ public class StudentExamPanel extends JPanel {
                 }
             }
         });
+        
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterExams(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterExams(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterExams(); }
+        });
     }
 
     private void loadExams() {
@@ -130,8 +146,12 @@ public class StudentExamPanel extends JPanel {
     }
 
     private void updateTable() {
+        updateTable(exams);
+    }
+
+    private void updateTable(List<Exam> toShow) {
         tableModel.setRowCount(0);
-        for (Exam exam : exams) {
+        for (Exam exam : toShow) {
             Object[] row = {
                 exam.getId(),
                 exam.getTitle(),
@@ -142,6 +162,35 @@ public class StudentExamPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private void filterExams() {
+        String searchText = normalizeString(searchField.getText());
+        if (searchText.isEmpty()) { updateTable(exams); return; }
+        List<Exam> filtered = new ArrayList<>();
+        for (Exam exam : exams) {
+            String haystack = buildSearchableText(exam);
+            boolean matches = true;
+            for (String token : searchText.split("\\s+")) {
+                if (!haystack.contains(token)) { matches = false; break; }
+            }
+            if (matches) filtered.add(exam);
+        }
+        updateTable(filtered);
+    }
+
+    private String buildSearchableText(Exam exam) {
+        StringBuilder sb = new StringBuilder();
+        if (exam.getTitle() != null) sb.append(exam.getTitle()).append(' ');
+        if (exam.getSubject() != null && exam.getSubject().getName() != null) sb.append(exam.getSubject().getName());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void startSelectedExam() {

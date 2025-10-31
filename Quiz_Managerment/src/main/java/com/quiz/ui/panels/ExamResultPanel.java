@@ -5,7 +5,11 @@ import com.quiz.model.ExamResult;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,6 +119,18 @@ public class ExamResultPanel extends JPanel {
                 }
             }
         });
+
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterResults(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterResults(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterResults(); }
+        });
     }
 
     private void loadExamResults() {
@@ -123,8 +139,12 @@ public class ExamResultPanel extends JPanel {
     }
 
     private void updateTable() {
+        updateTable(examResults);
+    }
+
+    private void updateTable(List<ExamResult> toShow) {
         tableModel.setRowCount(0);
-        for (ExamResult result : examResults) {
+        for (ExamResult result : toShow) {
             Object[] row = {
                 result.getId(),
                 result.getUser() != null ? result.getUser().getUsername() : "N/A",
@@ -136,6 +156,39 @@ public class ExamResultPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private void filterResults() {
+        String searchText = normalizeString(searchField.getText());
+        if (searchText.isEmpty()) { updateTable(examResults); return; }
+        List<ExamResult> filtered = new ArrayList<>();
+        for (ExamResult result : examResults) {
+            String haystack = buildSearchableText(result);
+            boolean matches = true;
+            for (String token : searchText.split("\\s+")) {
+                if (!haystack.contains(token)) { matches = false; break; }
+            }
+            if (matches) filtered.add(result);
+        }
+        updateTable(filtered);
+    }
+
+    private String buildSearchableText(ExamResult result) {
+        StringBuilder sb = new StringBuilder();
+        if (result.getUser() != null && result.getUser().getUsername() != null) sb.append(result.getUser().getUsername()).append(' ');
+        if (result.getExam() != null && result.getExam().getTitle() != null) sb.append(result.getExam().getTitle()).append(' ');
+        sb.append(String.format("%.1f", result.getScore())).append(' ');
+        if (result.getStartTime() != null) sb.append(result.getStartTime().toString()).append(' ');
+        if (result.getEndTime() != null) sb.append(result.getEndTime().toString()).append(' ');
+        if (result.getSubmittedAt() != null) sb.append(result.getSubmittedAt().toString());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void viewResultDetails() {

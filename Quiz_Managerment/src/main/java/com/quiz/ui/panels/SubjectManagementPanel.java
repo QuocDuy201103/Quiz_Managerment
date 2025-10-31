@@ -5,7 +5,11 @@ import com.quiz.model.Subject;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -110,6 +114,18 @@ public class SubjectManagementPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteSelectedSubject());
         refreshButton.addActionListener(e -> loadSubjects());
         
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterSubjects(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterSubjects(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterSubjects(); }
+        });
+        
         // Double click to edit
         subjectTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -127,8 +143,12 @@ public class SubjectManagementPanel extends JPanel {
     }
 
     private void updateTable() {
+        updateTable(subjects);
+    }
+
+    private void updateTable(List<Subject> toShow) {
         tableModel.setRowCount(0);
-        for (Subject subject : subjects) {
+        for (Subject subject : toShow) {
             Object[] row = {
                 subject.getId(),
                 subject.getName(),
@@ -136,6 +156,35 @@ public class SubjectManagementPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private void filterSubjects() {
+        String searchText = normalizeString(searchField.getText());
+        if (searchText.isEmpty()) { updateTable(subjects); return; }
+        List<Subject> filtered = new ArrayList<>();
+        for (Subject subject : subjects) {
+            String haystack = buildSearchableText(subject);
+            boolean matches = true;
+            for (String token : searchText.split("\\s+")) {
+                if (!haystack.contains(token)) { matches = false; break; }
+            }
+            if (matches) filtered.add(subject);
+        }
+        updateTable(filtered);
+    }
+
+    private String buildSearchableText(Subject subject) {
+        StringBuilder sb = new StringBuilder();
+        if (subject.getName() != null) sb.append(subject.getName()).append(' ');
+        if (subject.getDescription() != null) sb.append(subject.getDescription());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void showAddSubjectDialog() {

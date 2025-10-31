@@ -8,7 +8,10 @@ import com.quiz.model.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,6 +182,18 @@ public class QuestionManagementPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteSelectedQuestion());
         refreshButton.addActionListener(e -> loadQuestions());
         
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterQuestions(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterQuestions(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterQuestions(); }
+        });
+
         // Subject filter change
         subjectFilterCombo.addActionListener(e -> {
             Subject selectedSubject = (Subject) subjectFilterCombo.getSelectedItem();
@@ -221,7 +236,7 @@ public class QuestionManagementPanel extends JPanel {
     }
 
     private void filterQuestions() {
-        String searchText = searchField.getText().toLowerCase();
+        String searchText = normalizeString(searchField.getText());
         Subject selectedSubject = (Subject) subjectFilterCombo.getSelectedItem();
         Topic selectedTopic = (Topic) topicFilterCombo.getSelectedItem();
         Difficulty selectedDifficulty = (Difficulty) difficultyFilterCombo.getSelectedItem();
@@ -233,7 +248,14 @@ public class QuestionManagementPanel extends JPanel {
             
             // Search filter
             if (!searchText.isEmpty()) {
-                matches = matches && question.getContent().toLowerCase().contains(searchText);
+                String haystack = buildSearchableText(question);
+                String[] tokens = searchText.split("\\s+");
+                for (String token : tokens) {
+                    if (!haystack.contains(token)) {
+                        matches = false;
+                        break;
+                    }
+                }
             }
             
             // Subject filter
@@ -260,6 +282,23 @@ public class QuestionManagementPanel extends JPanel {
         }
         
         updateTable(filteredQuestions);
+    }
+
+    private String buildSearchableText(Question question) {
+        StringBuilder sb = new StringBuilder();
+        if (question.getContent() != null) sb.append(question.getContent()).append(' ');
+        if (question.getSubject() != null && question.getSubject().getName() != null) sb.append(question.getSubject().getName()).append(' ');
+        if (question.getTopic() != null && question.getTopic().getName() != null) sb.append(question.getTopic().getName()).append(' ');
+        if (question.getDifficulty() != null && question.getDifficulty().getLevel() != null) sb.append(question.getDifficulty().getLevel()).append(' ');
+        if (question.getCreatedByUser() != null && question.getCreatedByUser().getUsername() != null) sb.append(question.getCreatedByUser().getUsername());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void updateTable() {

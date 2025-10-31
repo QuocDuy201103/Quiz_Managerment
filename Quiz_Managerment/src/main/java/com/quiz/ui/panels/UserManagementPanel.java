@@ -6,7 +6,11 @@ import com.quiz.model.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -114,6 +118,18 @@ public class UserManagementPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteSelectedUser());
         refreshButton.addActionListener(e -> loadUsers());
         
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterUsers(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterUsers(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterUsers(); }
+        });
+        
         // Double click to edit
         userTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -131,8 +147,12 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void updateTable() {
+        updateTable(users);
+    }
+
+    private void updateTable(List<User> toShow) {
         tableModel.setRowCount(0);
-        for (User user : users) {
+        for (User user : toShow) {
             Object[] row = {
                 user.getId(),
                 user.getUsername(),
@@ -143,6 +163,39 @@ public class UserManagementPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private void filterUsers() {
+        String searchText = normalizeString(searchField.getText());
+        if (searchText.isEmpty()) {
+            updateTable(users);
+            return;
+        }
+        List<User> filtered = new ArrayList<>();
+        for (User user : users) {
+            String haystack = buildSearchableText(user);
+            boolean matches = true;
+            for (String token : searchText.split("\\s+")) {
+                if (!haystack.contains(token)) { matches = false; break; }
+            }
+            if (matches) filtered.add(user);
+        }
+        updateTable(filtered);
+    }
+
+    private String buildSearchableText(User user) {
+        StringBuilder sb = new StringBuilder();
+        if (user.getUsername() != null) sb.append(user.getUsername()).append(' ');
+        if (user.getEmail() != null) sb.append(user.getEmail()).append(' ');
+        if (user.getRole() != null && user.getRole().getName() != null) sb.append(user.getRole().getName());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void showAddUserDialog() {

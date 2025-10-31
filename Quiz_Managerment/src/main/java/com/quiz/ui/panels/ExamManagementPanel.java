@@ -7,7 +7,10 @@ import com.quiz.model.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,6 +159,18 @@ public class ExamManagementPanel extends JPanel {
         // Subject filter change
         subjectFilterCombo.addActionListener(e -> filterExams());
         
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterExams(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterExams(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterExams(); }
+        });
+        
         // Double click to view details
         examTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -173,13 +188,40 @@ public class ExamManagementPanel extends JPanel {
     }
 
     private void filterExams() {
-        // Implement filtering logic here
-        updateTable();
+        String searchText = normalizeString(searchField.getText());
+        Subject selectedSubject = (Subject) subjectFilterCombo.getSelectedItem();
+        
+        List<Exam> filtered = new ArrayList<>();
+        for (Exam exam : exams) {
+            boolean matches = true;
+            
+            if (!searchText.isEmpty()) {
+                String haystack = buildSearchableText(exam);
+                String[] tokens = searchText.split("\\s+");
+                for (String token : tokens) {
+                    if (!haystack.contains(token)) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (selectedSubject != null && selectedSubject.getId() > 0) {
+                matches = matches && exam.getSubject() != null && exam.getSubject().getId() == selectedSubject.getId();
+            }
+            
+            if (matches) filtered.add(exam);
+        }
+        updateTable(filtered);
     }
 
     private void updateTable() {
+        updateTable(exams);
+    }
+    
+    private void updateTable(List<Exam> toShow) {
         tableModel.setRowCount(0);
-        for (Exam exam : exams) {
+        for (Exam exam : toShow) {
             Object[] row = {
                 exam.getId(),
                 exam.getTitle(),
@@ -191,6 +233,21 @@ public class ExamManagementPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private String buildSearchableText(Exam exam) {
+        StringBuilder sb = new StringBuilder();
+        if (exam.getTitle() != null) sb.append(exam.getTitle()).append(' ');
+        if (exam.getSubject() != null && exam.getSubject().getName() != null) sb.append(exam.getSubject().getName()).append(' ');
+        if (exam.getCreatedByUser() != null && exam.getCreatedByUser().getUsername() != null) sb.append(exam.getCreatedByUser().getUsername());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void exportSelectedExam() {
@@ -207,25 +264,13 @@ public class ExamManagementPanel extends JPanel {
         }
 
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Chọn nơi lưu file đề thi (.txt)");
-        chooser.setSelectedFile(new java.io.File(examWithQuestions.getTitle().replaceAll("[^a-zA-Z0-9\\- ]", "_") + ".txt"));
+        chooser.setDialogTitle("Chọn nơi lưu file đề thi (.pdf)");
+        chooser.setSelectedFile(new java.io.File(examWithQuestions.getTitle().replaceAll("[^a-zA-Z0-9\\- ]", "_") + ".pdf"));
         int result = chooser.showSaveDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File file = chooser.getSelectedFile();
-            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
-                out.println("ĐỀ THI: " + examWithQuestions.getTitle());
-                out.println("Môn học: " + (examWithQuestions.getSubject() != null ? examWithQuestions.getSubject().getName() : "N/A"));
-                out.println("Thời gian: " + examWithQuestions.getDuration() + " phút");
-                out.println();
-                int idx = 1;
-                for (com.quiz.model.Question q : examWithQuestions.getQuestions()) {
-                    out.println(String.format("Câu %d: %s", idx++, q.getContent()));
-                    out.println("A. " + q.getOptionA());
-                    out.println("B. " + q.getOptionB());
-                    out.println("C. " + q.getOptionC());
-                    out.println("D. " + q.getOptionD());
-                    out.println();
-                }
+            try {
+                exportExamToPdf(examWithQuestions, file);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Lỗi khi xuất file đề thi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -233,6 +278,96 @@ public class ExamManagementPanel extends JPanel {
             }
             JOptionPane.showMessageDialog(this, "Xuất đề thi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    private void exportExamToPdf(Exam examWithQuestions, java.io.File file) throws Exception {
+        // Use PDFBox to create a simple, clean PDF. Try to use Windows Arial font for Vietnamese.
+        org.apache.pdfbox.pdmodel.PDDocument document = new org.apache.pdfbox.pdmodel.PDDocument();
+        try {
+            org.apache.pdfbox.pdmodel.font.PDType0Font font;
+            try {
+                java.io.File arial = new java.io.File("C:/Windows/Fonts/arial.ttf");
+                if (arial.exists()) {
+                    font = org.apache.pdfbox.pdmodel.font.PDType0Font.load(document, arial);
+                } else {
+                    font = org.apache.pdfbox.pdmodel.font.PDType0Font.load(document, new java.io.File("C:/Windows/Fonts/arialuni.ttf"));
+                }
+            } catch (Exception ignore) {
+                font = org.apache.pdfbox.pdmodel.font.PDType0Font.load(document, new java.io.File("C:/Windows/Fonts/tahoma.ttf"));
+            }
+
+            org.apache.pdfbox.pdmodel.PDPage page = new org.apache.pdfbox.pdmodel.PDPage(org.apache.pdfbox.pdmodel.common.PDRectangle.A4);
+            document.addPage(page);
+
+            org.apache.pdfbox.pdmodel.PDPageContentStream cs = new org.apache.pdfbox.pdmodel.PDPageContentStream(document, page);
+            float margin = 50f;
+            float y = page.getMediaBox().getHeight() - margin;
+            float width = page.getMediaBox().getWidth() - 2 * margin;
+
+            cs.setLeading(16f);
+            cs.beginText();
+            cs.setFont(font, 16);
+            cs.newLineAtOffset(margin, y);
+            writeWrapped(cs, "ĐỀ THI: " + examWithQuestions.getTitle(), font, 16, width);
+            cs.newLine();
+            writeWrapped(cs, "Môn học: " + (examWithQuestions.getSubject() != null ? examWithQuestions.getSubject().getName() : "N/A"), font, 12, width);
+            cs.newLine();
+            writeWrapped(cs, "Thời gian: " + examWithQuestions.getDuration() + " phút", font, 12, width);
+            cs.newLine();
+            cs.newLine();
+
+            int idx = 1;
+            for (com.quiz.model.Question q : examWithQuestions.getQuestions()) {
+                writeWrapped(cs, String.format("Câu %d: %s", idx++, q.getContent()), font, 12, width);
+                writeWrapped(cs, "A. " + safe(q.getOptionA()), font, 12, width);
+                writeWrapped(cs, "B. " + safe(q.getOptionB()), font, 12, width);
+                writeWrapped(cs, "C. " + safe(q.getOptionC()), font, 12, width);
+                writeWrapped(cs, "D. " + safe(q.getOptionD()), font, 12, width);
+                cs.newLine();
+            }
+            cs.endText();
+            cs.close();
+
+            if (!file.getName().toLowerCase().endsWith(".pdf")) {
+                file = new java.io.File(file.getAbsolutePath() + ".pdf");
+            }
+            document.save(file);
+        } finally {
+            document.close();
+        }
+    }
+
+    private String safe(String s) { return s == null ? "" : s; }
+
+    // Simple wrapping writer for a single content stream using current text position
+    private void writeWrapped(org.apache.pdfbox.pdmodel.PDPageContentStream cs, String text,
+                              org.apache.pdfbox.pdmodel.font.PDType0Font font, float fontSize,
+                              float maxWidth) throws java.io.IOException {
+        java.util.List<String> lines = wrapText(text, font, fontSize, maxWidth);
+        for (String line : lines) {
+            cs.setFont(font, fontSize);
+            cs.showText(line);
+            cs.newLine();
+        }
+    }
+
+    private java.util.List<String> wrapText(String text, org.apache.pdfbox.pdmodel.font.PDType0Font font,
+                                            float fontSize, float maxWidth) throws java.io.IOException {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        String[] words = text.split("\\s+");
+        StringBuilder line = new StringBuilder();
+        for (String w : words) {
+            String test = line.length() == 0 ? w : line + " " + w;
+            float width = font.getStringWidth(test) / 1000 * fontSize;
+            if (width > maxWidth && line.length() > 0) {
+                lines.add(line.toString());
+                line = new StringBuilder(w);
+            } else {
+                line = new StringBuilder(test);
+            }
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        return lines;
     }
 
     private void showAddExamDialog() {

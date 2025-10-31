@@ -7,7 +7,11 @@ import com.quiz.model.Topic;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -113,6 +117,18 @@ public class TopicManagementPanel extends JPanel {
         deleteButton.addActionListener(e -> deleteSelectedTopic());
         refreshButton.addActionListener(e -> loadTopics());
         
+        // Live search when typing
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { filterTopics(); }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) { filterTopics(); }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) { filterTopics(); }
+        });
+        
         // Double click to edit
         topicTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -130,8 +146,12 @@ public class TopicManagementPanel extends JPanel {
     }
 
     private void updateTable() {
+        updateTable(topics);
+    }
+
+    private void updateTable(List<Topic> toShow) {
         tableModel.setRowCount(0);
-        for (Topic topic : topics) {
+        for (Topic topic : toShow) {
             Object[] row = {
                 topic.getId(),
                 topic.getName(),
@@ -139,6 +159,35 @@ public class TopicManagementPanel extends JPanel {
             };
             tableModel.addRow(row);
         }
+    }
+
+    private void filterTopics() {
+        String searchText = normalizeString(searchField.getText());
+        if (searchText.isEmpty()) { updateTable(topics); return; }
+        List<Topic> filtered = new ArrayList<>();
+        for (Topic topic : topics) {
+            String haystack = buildSearchableText(topic);
+            boolean matches = true;
+            for (String token : searchText.split("\\s+")) {
+                if (!haystack.contains(token)) { matches = false; break; }
+            }
+            if (matches) filtered.add(topic);
+        }
+        updateTable(filtered);
+    }
+
+    private String buildSearchableText(Topic topic) {
+        StringBuilder sb = new StringBuilder();
+        if (topic.getName() != null) sb.append(topic.getName()).append(' ');
+        if (topic.getSubject() != null && topic.getSubject().getName() != null) sb.append(topic.getSubject().getName());
+        return normalizeString(sb.toString());
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        String lowered = input.toLowerCase().trim().replaceAll("\\s+", " ");
+        String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private void showAddTopicDialog() {
