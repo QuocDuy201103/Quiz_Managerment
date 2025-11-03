@@ -165,22 +165,50 @@ public class ExamResultDAO {
 
     // Thống kê số lần làm theo từng đề thi
     public List<ExamAttemptStat> getAttemptCountsPerExam() {
-        List<ExamAttemptStat> stats = new ArrayList<>();
-        String sql = "SELECT e.id AS examId, e.title AS examTitle, COUNT(er.id) AS attempts " +
-                "FROM Exams e " +
-                "LEFT JOIN ExamResults er ON er.examId = e.id " +
-                "GROUP BY e.id, e.title " +
-                "ORDER BY attempts DESC, e.title ASC";
+        return getAttemptCountsPerExam(null, null);
+    }
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                ExamAttemptStat stat = new ExamAttemptStat(
-                        rs.getInt("examId"),
-                        rs.getString("examTitle"),
-                        rs.getInt("attempts")
-                );
-                stats.add(stat);
+    // Thống kê số lần làm theo từng đề thi với lọc theo ngày
+    public List<ExamAttemptStat> getAttemptCountsPerExam(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        List<ExamAttemptStat> stats = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT e.id AS examId, e.title AS examTitle, COUNT(er.id) AS attempts " +
+                "FROM Exams e " +
+                "LEFT JOIN ExamResults er ON er.examId = e.id ");
+        
+        if (startDate != null || endDate != null) {
+            sql.append("WHERE ");
+            if (startDate != null && endDate != null) {
+                sql.append("CAST(er.submittedAt AS DATE) BETWEEN ? AND ? ");
+            } else if (startDate != null) {
+                sql.append("CAST(er.submittedAt AS DATE) >= ? ");
+            } else if (endDate != null) {
+                sql.append("CAST(er.submittedAt AS DATE) <= ? ");
+            }
+        }
+        
+        sql.append("GROUP BY e.id, e.title " +
+                "ORDER BY attempts DESC, e.title ASC");
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (startDate != null && endDate != null) {
+                stmt.setDate(paramIndex++, java.sql.Date.valueOf(startDate));
+                stmt.setDate(paramIndex++, java.sql.Date.valueOf(endDate));
+            } else if (startDate != null) {
+                stmt.setDate(paramIndex++, java.sql.Date.valueOf(startDate));
+            } else if (endDate != null) {
+                stmt.setDate(paramIndex++, java.sql.Date.valueOf(endDate));
+            }
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ExamAttemptStat stat = new ExamAttemptStat(
+                            rs.getInt("examId"),
+                            rs.getString("examTitle"),
+                            rs.getInt("attempts")
+                    );
+                    stats.add(stat);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

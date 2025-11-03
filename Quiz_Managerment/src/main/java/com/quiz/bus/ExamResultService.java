@@ -41,6 +41,11 @@ public class ExamResultService {
         List<ExamAttemptStat> stats = examResultDAO.getAttemptCountsPerExam();
         return stats != null ? stats : Collections.emptyList();
     }
+
+    public List<ExamAttemptStat> getAttemptCountsPerExam(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        List<ExamAttemptStat> stats = examResultDAO.getAttemptCountsPerExam(startDate, endDate);
+        return stats != null ? stats : Collections.emptyList();
+    }
 }
 
 

@@ -6,6 +6,9 @@ import com.quiz.model.ExamAttemptStat;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -14,9 +17,15 @@ import java.util.List;
 public class StatisticsPanel extends JPanel {
     private ExamResultService examResultService;
     private JButton refreshButton;
+    private JButton clearFilterButton;
     private JLabel titleLabel;
     private JScrollPane chartScrollPane;
     private BarChartPanel chartPanel;
+    private JSpinner startDateSpinner;
+    private JSpinner endDateSpinner;
+    private JLabel startDateLabel;
+    private JLabel endDateLabel;
+    private JCheckBox enableDateFilterCheckBox;
 
     public StatisticsPanel() {
         this.examResultService = new ExamResultService();
@@ -28,33 +37,145 @@ public class StatisticsPanel extends JPanel {
     private void initializeComponents() {
         titleLabel = new JLabel("Thống kê: Số lần làm theo đề thi");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        
         refreshButton = new JButton("Làm mới", com.quiz.ui.IconUtil.load("/images/refresh.png", 16, 16));
         com.quiz.ui.StyleUtil.secondary(refreshButton);
         refreshButton.addActionListener(e -> loadDataAndRender());
+        
+        clearFilterButton = new JButton("Xóa bộ lọc");
+        com.quiz.ui.StyleUtil.secondary(clearFilterButton);
+        clearFilterButton.addActionListener(e -> clearFilters());
+        
+        // Setup date filter checkbox
+        enableDateFilterCheckBox = new JCheckBox("Lọc theo ngày");
+        enableDateFilterCheckBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        enableDateFilterCheckBox.setSelected(false);
+        enableDateFilterCheckBox.addActionListener(e -> {
+            boolean enabled = enableDateFilterCheckBox.isSelected();
+            startDateSpinner.setEnabled(enabled);
+            endDateSpinner.setEnabled(enabled);
+            startDateLabel.setEnabled(enabled);
+            endDateLabel.setEnabled(enabled);
+            loadDataAndRender();
+        });
+        
+        // Setup date spinners
+        Date today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date oneMonthAgo = Date.from(LocalDate.now().minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        
+        SpinnerDateModel startDateModel = new SpinnerDateModel(oneMonthAgo, null, null, java.util.Calendar.DAY_OF_MONTH);
+        SpinnerDateModel endDateModel = new SpinnerDateModel(today, null, null, java.util.Calendar.DAY_OF_MONTH);
+        
+        startDateSpinner = new JSpinner(startDateModel);
+        endDateSpinner = new JSpinner(endDateModel);
+        
+        // Set default format and editor
+        startDateSpinner.setEditor(new JSpinner.DateEditor(startDateSpinner, "dd/MM/yyyy"));
+        endDateSpinner.setEditor(new JSpinner.DateEditor(endDateSpinner, "dd/MM/yyyy"));
+        
+        // Initially disabled
+        startDateSpinner.setEnabled(false);
+        endDateSpinner.setEnabled(false);
+        
+        startDateLabel = new JLabel("Từ ngày:");
+        startDateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        startDateLabel.setEnabled(false);
+        
+        endDateLabel = new JLabel("Đến ngày:");
+        endDateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        endDateLabel.setEnabled(false);
 
         chartPanel = new BarChartPanel();
         chartScrollPane = new JScrollPane(chartPanel, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         chartScrollPane.setBorder(BorderFactory.createEmptyBorder());
+    }
+    
+    private void clearFilters() {
+        enableDateFilterCheckBox.setSelected(false);
+        // Reset to default dates (1 month ago to today)
+        Date today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date oneMonthAgo = Date.from(LocalDate.now().minusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        startDateSpinner.setValue(oneMonthAgo);
+        endDateSpinner.setValue(today);
+        loadDataAndRender();
     }
 
     private void setupLayout() {
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
+        // Top panel with title and buttons
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(new EmptyBorder(0, 0, 10, 0));
         top.add(titleLabel, BorderLayout.WEST);
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        right.add(clearFilterButton);
         right.add(refreshButton);
         right.setOpaque(false);
         top.add(right, BorderLayout.EAST);
 
-        add(top, BorderLayout.NORTH);
+        // Filter panel with date pickers
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filterPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createEtchedBorder(), "Bộ lọc theo ngày"));
+        filterPanel.setOpaque(false);
+        
+        filterPanel.add(enableDateFilterCheckBox);
+        filterPanel.add(Box.createHorizontalStrut(15));
+        filterPanel.add(startDateLabel);
+        filterPanel.add(startDateSpinner);
+        filterPanel.add(Box.createHorizontalStrut(10));
+        filterPanel.add(endDateLabel);
+        filterPanel.add(endDateSpinner);
+        
+        // Add change listeners to date spinners
+        startDateSpinner.addChangeListener(e -> {
+            if (enableDateFilterCheckBox.isSelected()) {
+                loadDataAndRender();
+            }
+        });
+        endDateSpinner.addChangeListener(e -> {
+            if (enableDateFilterCheckBox.isSelected()) {
+                loadDataAndRender();
+            }
+        });
+
+        // Main top panel combining title and filters
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.add(top, BorderLayout.NORTH);
+        topContainer.add(filterPanel, BorderLayout.CENTER);
+
+        add(topContainer, BorderLayout.NORTH);
         add(chartScrollPane, BorderLayout.CENTER);
     }
 
     private void loadDataAndRender() {
-        List<ExamAttemptStat> stats = examResultService.getAttemptCountsPerExam();
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+        
+        // Only use dates if filter is enabled
+        if (enableDateFilterCheckBox.isSelected()) {
+            // Get start date from spinner
+            Date startDateValue = (Date) startDateSpinner.getValue();
+            if (startDateValue != null) {
+                startDate = startDateValue.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+            
+            // Get end date from spinner
+            Date endDateValue = (Date) endDateSpinner.getValue();
+            if (endDateValue != null) {
+                endDate = endDateValue.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        }
+        
+        List<ExamAttemptStat> stats;
+        if (enableDateFilterCheckBox.isSelected() && (startDate != null || endDate != null)) {
+            stats = examResultService.getAttemptCountsPerExam(startDate, endDate);
+        } else {
+            stats = examResultService.getAttemptCountsPerExam();
+        }
+        
         chartPanel.setData(stats);
         chartPanel.revalidate();
         chartPanel.repaint();
