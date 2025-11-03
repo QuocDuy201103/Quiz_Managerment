@@ -1,9 +1,9 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.QuestionDAO;
-import com.quiz.dao.SubjectDAO;
-import com.quiz.dao.TopicDAO;
-import com.quiz.dao.DifficultyDAO;
+import com.quiz.bus.DifficultyService;
+import com.quiz.bus.QuestionService;
+import com.quiz.bus.SubjectService;
+import com.quiz.bus.TopicService;
 import com.quiz.model.*;
 
 import javax.swing.*;
@@ -27,10 +27,10 @@ public class QuestionManagementPanel extends JPanel {
     private JComboBox<Difficulty> difficultyFilterCombo;
     private JButton addButton, editButton, deleteButton, refreshButton;
     private JScrollPane scrollPane;
-    private QuestionDAO questionDAO;
-    private SubjectDAO subjectDAO;
-    private TopicDAO topicDAO;
-    private DifficultyDAO difficultyDAO;
+    private QuestionService questionService;
+    private SubjectService subjectService;
+    private TopicService topicService;
+    private DifficultyService difficultyService;
     private List<Question> questions;
     private User currentUser;
 
@@ -40,10 +40,10 @@ public class QuestionManagementPanel extends JPanel {
     
     public QuestionManagementPanel(User currentUser) {
         this.currentUser = currentUser;
-        questionDAO = new QuestionDAO();
-        subjectDAO = new SubjectDAO();
-        topicDAO = new TopicDAO();
-        difficultyDAO = new DifficultyDAO();
+        questionService = new QuestionService();
+        subjectService = new SubjectService();
+        topicService = new TopicService();
+        difficultyService = new DifficultyService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -106,7 +106,7 @@ public class QuestionManagementPanel extends JPanel {
         
         // Load difficulties from database
         try {
-            List<Difficulty> difficulties = difficultyDAO.getAllDifficulties();
+            List<Difficulty> difficulties = difficultyService.getAllDifficulties();
             for (Difficulty difficulty : difficulties) {
                 difficultyFilterCombo.addItem(difficulty);
             }
@@ -119,7 +119,7 @@ public class QuestionManagementPanel extends JPanel {
         }
         
         // Load subjects
-        List<Subject> subjects = subjectDAO.getAllSubjects();
+        List<Subject> subjects = subjectService.getAllSubjects();
         for (Subject subject : subjects) {
             subjectFilterCombo.addItem(subject);
         }
@@ -223,7 +223,7 @@ public class QuestionManagementPanel extends JPanel {
         topicFilterCombo.addItem(new Topic(-1, "Tất cả chủ đề", 0));
         
         if (subjectId > 0) {
-            List<Topic> topics = topicDAO.getTopicsBySubject(subjectId);
+            List<Topic> topics = topicService.getTopicsBySubject(subjectId);
             for (Topic topic : topics) {
                 topicFilterCombo.addItem(topic);
             }
@@ -231,7 +231,7 @@ public class QuestionManagementPanel extends JPanel {
     }
 
     private void loadQuestions() {
-        questions = questionDAO.getAllQuestions();
+        questions = questionService.getAllQuestions();
         updateTable();
     }
 
@@ -315,7 +315,7 @@ public class QuestionManagementPanel extends JPanel {
                 question.getTopic() != null ? question.getTopic().getName() : "N/A",
                 question.getDifficulty() != null ? question.getDifficulty().getLevel() : "N/A",
                 question.getCreatedByUser() != null ? question.getCreatedByUser().getUsername() : "N/A",
-                question.getCreatedAt().toString().substring(0, 19)
+                question.getCreatedAt().toString().substring(0, 19).replace("T", " ")
             };
             tableModel.addRow(row);
         }
@@ -354,8 +354,8 @@ public class QuestionManagementPanel extends JPanel {
         Question selectedQuestion = questions.get(selectedRow);
         
         // Kiểm tra xem câu hỏi có đang được sử dụng trong đề thi nào không
-        if (questionDAO.isQuestionUsedInExams(selectedQuestion.getId())) {
-            List<String> examNames = questionDAO.getExamsUsingQuestion(selectedQuestion.getId());
+        if (questionService.isQuestionUsedInExams(selectedQuestion.getId())) {
+            List<String> examNames = questionService.getExamsUsingQuestion(selectedQuestion.getId());
             String examList = String.join(", ", examNames);
             
             int option = JOptionPane.showConfirmDialog(this, 
@@ -378,7 +378,7 @@ public class QuestionManagementPanel extends JPanel {
         }
         
         // Thực hiện xóa
-        if (questionDAO.deleteQuestion(selectedQuestion.getId())) {
+        if (questionService.deleteQuestion(selectedQuestion.getId())) {
             JOptionPane.showMessageDialog(this, "Xóa câu hỏi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             loadQuestions();
         } else {
@@ -420,7 +420,7 @@ public class QuestionManagementPanel extends JPanel {
             // Subject combo
             subjectCombo = new JComboBox<>();
             subjectCombo.addItem(new Subject(0, "-- Chọn môn học --", ""));
-            List<Subject> subjects = subjectDAO.getAllSubjects();
+            List<Subject> subjects = subjectService.getAllSubjects();
             for (Subject subject : subjects) {
                 subjectCombo.addItem(subject);
             }
@@ -435,7 +435,7 @@ public class QuestionManagementPanel extends JPanel {
             
             // Load difficulties from database
             try {
-                List<Difficulty> difficulties = difficultyDAO.getAllDifficulties();
+                List<Difficulty> difficulties = difficultyService.getAllDifficulties();
                 for (Difficulty difficulty : difficulties) {
                     difficultyCombo.addItem(difficulty);
                 }
@@ -602,7 +602,7 @@ public class QuestionManagementPanel extends JPanel {
             topicCombo.removeAllItems();
             topicCombo.addItem(new Topic(0, "-- Chọn chủ đề --", 0));
             if (subjectId > 0) {
-                List<Topic> topics = topicDAO.getTopicsBySubject(subjectId);
+                List<Topic> topics = topicService.getTopicsBySubject(subjectId);
                 for (Topic topic : topics) {
                     topicCombo.addItem(topic);
                 }
@@ -715,7 +715,7 @@ public class QuestionManagementPanel extends JPanel {
                 
                 Question newQuestion = new Question(content, optionA, optionB, optionC, optionD,
                     selectedTopic.getId(), selectedDifficulty.getId(), selectedSubject.getId(), createdBy);
-                success = questionDAO.addQuestion(newQuestion, correctAnswers);
+                success = questionService.createQuestion(newQuestion, correctAnswers);
             } else {
                 // Update existing question
                 question.setContent(content);
@@ -728,7 +728,7 @@ public class QuestionManagementPanel extends JPanel {
                 question.setSubjectId(selectedSubject.getId());
                 
                 
-                success = questionDAO.updateQuestion(question, correctAnswers);
+                success = questionService.updateQuestion(question, correctAnswers);
             }
             
             if (success) {

@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.UserDAO;
+import com.quiz.bus.UserService;
 import com.quiz.model.Role;
 import com.quiz.model.User;
 
@@ -22,11 +22,11 @@ public class UserManagementPanel extends JPanel {
     private JTextField searchField;
     private JButton addButton, editButton, deleteButton, refreshButton;
     private JScrollPane scrollPane;
-    private UserDAO userDAO;
+    private UserService userService;
     private List<User> users;
 
     public UserManagementPanel() {
-        userDAO = new UserDAO();
+        userService = new UserService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -142,7 +142,7 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void loadUsers() {
-        users = userDAO.getAllUsers();
+        users = userService.getAllUsers();
         updateTable();
     }
 
@@ -158,8 +158,8 @@ public class UserManagementPanel extends JPanel {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole().getName(),
-                user.getCreatedAt().toString().substring(0, 19),
-                user.getLastLogin() != null ? user.getLastLogin().toString().substring(0, 19) : "Chưa đăng nhập"
+                user.getCreatedAt().toString().substring(0, 19).replace("T", " "),
+                user.getLastLogin() != null ? user.getLastLogin().toString().substring(0, 19).replace("T", " ") : "Chưa đăng nhập"
             };
             tableModel.addRow(row);
         }
@@ -234,7 +234,7 @@ public class UserManagementPanel extends JPanel {
             "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         
         if (option == JOptionPane.YES_OPTION) {
-            if (userDAO.deleteUser(selectedUser.getId())) {
+            if (userService.deleteUser(selectedUser.getId())) {
                 JOptionPane.showMessageDialog(this, "Xóa người dùng thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadUsers();
             } else {
@@ -271,7 +271,7 @@ public class UserManagementPanel extends JPanel {
             
             // Load roles from database
             try {
-                List<Role> roles = userDAO.getAllRoles();
+                List<Role> roles = userService.getAllRoles();
                 for (Role role : roles) {
                     roleComboBox.addItem(role);
                 }
@@ -382,14 +382,14 @@ public class UserManagementPanel extends JPanel {
             if (user == null) {
                 // Add new user
                 User newUser = new User(username, password, email, selectedRole.getId());
-                success = userDAO.addUser(newUser);
+                success = userService.createUser(newUser);
             } else {
                 // Update existing user
                 user.setUsername(username);
                 user.setPassword(password);
                 user.setEmail(email);
                 user.setRoleId(selectedRole.getId());
-                success = userDAO.updateUser(user);
+                success = userService.updateUser(user);
             }
             
             if (success) {

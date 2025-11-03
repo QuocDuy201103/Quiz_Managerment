@@ -34,7 +34,7 @@ public class ExamResultPanel extends JPanel {
 
     private void initializeComponents() {
         // Table
-        String[] columnNames = {"ID", "Học sinh", "Đề thi", "Điểm", "Thời gian bắt đầu", "Thời gian kết thúc", "Ngày nộp"};
+        String[] columnNames = {"ID", "Học sinh", "Đề thi", "Điểm", "Thời gian bắt đầu", "Thời gian kết thúc", "Thời gian nộp bài"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -134,20 +134,8 @@ public class ExamResultPanel extends JPanel {
     }
 
     private void loadExamResults() {
-        List<ExamResult> results = examResultService.getAllResults();
-        tableModel.setRowCount(0);
-        for (ExamResult r : results) {
-            Object[] row = {
-                r.getId(),
-                r.getUser() != null ? r.getUser().getUsername() : r.getUserId(),
-                r.getExam() != null ? r.getExam().getTitle() : r.getExamId(),
-                r.getScore(),
-                r.getStartTime() != null ? r.getStartTime().toString().substring(0, 19) : "",
-                r.getEndTime() != null ? r.getEndTime().toString().substring(0, 19) : "",
-                r.getSubmittedAt() != null ? r.getSubmittedAt().toString().substring(0, 19) : ""
-            };
-            tableModel.addRow(row);
-        }
+        examResults = examResultService.getAllResults();
+        updateTable(examResults);
     }
 
     private void updateTable() {
@@ -162,9 +150,9 @@ public class ExamResultPanel extends JPanel {
                 result.getUser() != null ? result.getUser().getUsername() : "N/A",
                 result.getExam() != null ? result.getExam().getTitle() : "N/A",
                 String.format("%.1f/10", result.getScore()),
-                result.getStartTime().toString().substring(0, 19),
-                result.getEndTime().toString().substring(0, 19),
-                result.getSubmittedAt().toString().substring(0, 19)
+                result.getStartTime().toString().substring(0, 19).replace("T", " "),
+                result.getEndTime().toString().substring(0, 19).replace("T", " "),
+                result.getSubmittedAt().toString().substring(0, 19).replace("T", " ")
             };
             tableModel.addRow(row);
         }
@@ -210,7 +198,36 @@ public class ExamResultPanel extends JPanel {
             return;
         }
         
-        ExamResult selectedResult = examResults.get(selectedRow);
+        // Lấy kết quả từ danh sách đã được lọc (nếu có) hoặc danh sách gốc
+        List<ExamResult> currentResults = examResults;
+        if (currentResults == null || currentResults.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Không có dữ liệu kết quả thi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Kiểm tra xem có đang filter không
+        String searchText = searchField.getText().trim();
+        if (!searchText.isEmpty()) {
+            // Đang filter, cần lấy từ filtered list
+            List<ExamResult> filtered = new ArrayList<>();
+            for (ExamResult result : examResults) {
+                String haystack = buildSearchableText(result);
+                String normalizedSearch = normalizeString(searchText);
+                boolean matches = true;
+                for (String token : normalizedSearch.split("\\s+")) {
+                    if (!haystack.contains(token)) { matches = false; break; }
+                }
+                if (matches) filtered.add(result);
+            }
+            currentResults = filtered;
+        }
+        
+        if (selectedRow >= currentResults.size()) {
+            JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy kết quả thi được chọn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        ExamResult selectedResult = currentResults.get(selectedRow);
         
         // Tạo dialog hiển thị chi tiết kết quả
         JDialog detailsDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Chi tiết kết quả thi", true);
@@ -242,24 +259,18 @@ public class ExamResultPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 3;
         mainPanel.add(new JLabel("Thời gian bắt đầu:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getStartTime().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getStartTime().toString().substring(0, 19).replace("T", " ")), gbc);
         
         gbc.gridx = 0; gbc.gridy = 4;
         mainPanel.add(new JLabel("Thời gian kết thúc:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getEndTime().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getEndTime().toString().substring(0, 19).replace("T", " ")), gbc);
         
         gbc.gridx = 0; gbc.gridy = 5;
-        mainPanel.add(new JLabel("Ngày nộp:"), gbc);
+        mainPanel.add(new JLabel("Thời gian nộp bài:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getSubmittedAt().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getSubmittedAt().toString().substring(0, 19).replace("T", " ")), gbc);
         
-        // Thời gian làm bài
-        long durationMinutes = java.time.Duration.between(selectedResult.getStartTime(), selectedResult.getEndTime()).toMinutes();
-        gbc.gridx = 0; gbc.gridy = 6;
-        mainPanel.add(new JLabel("Thời gian làm bài:"), gbc);
-        gbc.gridx = 1;
-        mainPanel.add(new JLabel(durationMinutes + " phút"), gbc);
         
         JButton closeButton = new JButton("Đóng");
         closeButton.addActionListener(e -> detailsDialog.dispose());

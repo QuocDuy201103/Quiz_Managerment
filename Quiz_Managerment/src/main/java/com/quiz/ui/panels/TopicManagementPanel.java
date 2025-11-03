@@ -1,7 +1,7 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.SubjectDAO;
-import com.quiz.dao.TopicDAO;
+import com.quiz.bus.SubjectService;
+import com.quiz.bus.TopicService;
 import com.quiz.model.Subject;
 import com.quiz.model.Topic;
 
@@ -23,13 +23,13 @@ public class TopicManagementPanel extends JPanel {
     private JTextField searchField;
     private JButton addButton, editButton, deleteButton, refreshButton;
     private JScrollPane scrollPane;
-    private TopicDAO topicDAO;
-    private SubjectDAO subjectDAO;
+    private TopicService topicService;
+    private SubjectService subjectService;
     private List<Topic> topics;
 
     public TopicManagementPanel() {
-        topicDAO = new TopicDAO();
-        subjectDAO = new SubjectDAO();
+        topicService = new TopicService();
+        subjectService = new SubjectService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -141,7 +141,7 @@ public class TopicManagementPanel extends JPanel {
     }
 
     private void loadTopics() {
-        topics = topicDAO.getAllTopics();
+        topics = topicService.getAllTopics();
         updateTable();
     }
 
@@ -226,7 +226,7 @@ public class TopicManagementPanel extends JPanel {
             "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         
         if (option == JOptionPane.YES_OPTION) {
-            if (topicDAO.deleteTopic(selectedTopic.getId())) {
+            if (topicService.deleteTopic(selectedTopic.getId())) {
                 JOptionPane.showMessageDialog(this, "Xóa chủ đề thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadTopics();
             } else {
@@ -257,7 +257,7 @@ public class TopicManagementPanel extends JPanel {
             
             // Subject combo box
             subjectComboBox = new JComboBox<>();
-            List<Subject> subjects = subjectDAO.getAllSubjects();
+            List<Subject> subjects = subjectService.getAllSubjects();
             for (Subject subject : subjects) {
                 subjectComboBox.addItem(subject);
             }
@@ -343,12 +343,12 @@ public class TopicManagementPanel extends JPanel {
             if (topic == null) {
                 // Add new topic
                 Topic newTopic = new Topic(name, selectedSubject.getId());
-                success = topicDAO.addTopic(newTopic);
+                success = topicService.createTopic(newTopic);
             } else {
                 // Update existing topic
                 topic.setName(name);
                 topic.setSubjectId(selectedSubject.getId());
-                success = topicDAO.updateTopic(topic);
+                success = topicService.updateTopic(topic);
             }
             
             if (success) {

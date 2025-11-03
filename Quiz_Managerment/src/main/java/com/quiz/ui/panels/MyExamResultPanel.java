@@ -36,7 +36,7 @@ public class MyExamResultPanel extends JPanel {
 
     private void initializeComponents() {
         // Table
-        String[] columnNames = {"ID", "Đề thi", "Điểm", "Thời gian bắt đầu", "Thời gian kết thúc", "Ngày nộp"};
+        String[] columnNames = {"ID", "Đề thi", "Điểm", "Thời gian bắt đầu", "Thời gian kết thúc", "Thời gian nộp bài"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -136,9 +136,9 @@ public class MyExamResultPanel extends JPanel {
                 result.getId(),
                 result.getExam() != null ? result.getExam().getTitle() : "N/A",
                 String.format("%.1f/10", result.getScore()),
-                result.getStartTime().toString().substring(0, 19),
-                result.getEndTime().toString().substring(0, 19),
-                result.getSubmittedAt().toString().substring(0, 19)
+                result.getStartTime().toString().substring(0, 19).replace("T", " "),
+                result.getEndTime().toString().substring(0, 19).replace("T", " "),
+                result.getSubmittedAt().toString().substring(0, 19).replace("T", " ")
             };
             tableModel.addRow(row);
         }
@@ -187,17 +187,17 @@ public class MyExamResultPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 2;
         mainPanel.add(new JLabel("Thời gian bắt đầu:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getStartTime().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getStartTime().toString().substring(0, 19).replace("T", " ")), gbc);
         
         gbc.gridx = 0; gbc.gridy = 3;
         mainPanel.add(new JLabel("Thời gian kết thúc:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getEndTime().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getEndTime().toString().substring(0, 19).replace("T", " ")), gbc);
         
         gbc.gridx = 0; gbc.gridy = 4;
         mainPanel.add(new JLabel("Ngày nộp:"), gbc);
         gbc.gridx = 1;
-        mainPanel.add(new JLabel(selectedResult.getSubmittedAt().toString()), gbc);
+        mainPanel.add(new JLabel(selectedResult.getSubmittedAt().toString().substring(0, 19).replace("T", " ")), gbc);
         
         // Thời gian làm bài
         long durationMinutes = java.time.Duration.between(selectedResult.getStartTime(), selectedResult.getEndTime()).toMinutes();

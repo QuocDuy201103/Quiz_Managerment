@@ -227,7 +227,7 @@ public class ExamManagementPanel extends JPanel {
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
                 exam.getQuestionCount(),
                 exam.getCreatedByUser() != null ? exam.getCreatedByUser().getUsername() : "N/A",
-                exam.getCreatedAt().toString().substring(0, 19)
+                exam.getCreatedAt().toString().substring(0, 19).replace("T", " ")
             };
             tableModel.addRow(row);
         }

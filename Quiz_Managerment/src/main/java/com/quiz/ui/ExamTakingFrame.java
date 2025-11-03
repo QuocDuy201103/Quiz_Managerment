@@ -1,7 +1,7 @@
 package com.quiz.ui;
 
-import com.quiz.dao.ExamResultDAO;
-import com.quiz.dao.QuestionDAO;
+import com.quiz.bus.ExamResultService;
+import com.quiz.bus.QuestionService;
 import com.quiz.model.*;
 
 import javax.swing.*;
@@ -32,7 +32,8 @@ public class ExamTakingFrame extends JFrame {
     private Timer timer;
     private int timeRemaining; // in seconds
     private int totalAllocatedTimeSeconds; // total allocated time based on mode
-    private QuestionDAO questionDAO;
+    private QuestionService questionService;
+    private ExamResultService examResultService;
     private User currentUser;
     
     // UI Components
@@ -73,7 +74,8 @@ public class ExamTakingFrame extends JFrame {
         this.userAnswers = new ArrayList<>();
         this.startTime = LocalDateTime.now();
         this.timeRemaining = 0;
-        this.questionDAO = new QuestionDAO();
+        this.questionService = new QuestionService();
+        this.examResultService = new ExamResultService();
 
         // Apply mode-specific settings
         applyModeSettings();
@@ -161,6 +163,7 @@ public class ExamTakingFrame extends JFrame {
         progressTextLabel = new JLabel("Tiến độ: 0/" + questions.size(), SwingConstants.CENTER);
         progressTextLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         progressTextLabel.setForeground(new Color(100, 116, 139));
+        progressTextLabel.setBorder(new EmptyBorder(2, 0, 0, 0));
         // Modern look
         progressBar.setForeground(new Color(59, 130, 246));
         progressBar.setBackground(new Color(229, 231, 235));
@@ -280,7 +283,7 @@ public class ExamTakingFrame extends JFrame {
             return;
 
         // Get correct answer
-        Question fullQuestion = questionDAO.getQuestionById(currentQuestion.getId());
+                Question fullQuestion = questionService.getQuestionById(currentQuestion.getId());
         List<String> correctOptions = fullQuestion != null ? fullQuestion.getCorrectAnswers() : null;
 
         boolean isCorrect = false;
@@ -378,7 +381,7 @@ public class ExamTakingFrame extends JFrame {
             return;
 
         Question currentQuestion = questions.get(currentQuestionIndex);
-        Question fullQuestion = questionDAO.getQuestionById(currentQuestion.getId());
+                Question fullQuestion = questionService.getQuestionById(currentQuestion.getId());
         List<String> correctOptions = fullQuestion != null ? fullQuestion.getCorrectAnswers() : null;
 
         String hintMessage;
@@ -410,7 +413,7 @@ public class ExamTakingFrame extends JFrame {
         
         // Top panel - Enhanced with timer and score
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        topPanel.setBorder(new EmptyBorder(16, 20, 4, 20));
         topPanel.setBackground(new Color(247, 249, 252));
         
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -427,7 +430,7 @@ public class ExamTakingFrame extends JFrame {
         // Progress bar
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.setBackground(new Color(248, 250, 252));
-        progressPanel.setBorder(new EmptyBorder(0, 20, 8, 20));
+        progressPanel.setBorder(new EmptyBorder(4, 20, 4, 20));
         progressPanel.add(progressBar, BorderLayout.CENTER);
         progressPanel.add(progressTextLabel, BorderLayout.SOUTH);
 
@@ -815,13 +818,12 @@ public class ExamTakingFrame extends JFrame {
         // Calculate score
         double score = calculateScore();
         
-        ExamResultDAO examResultDAO = new ExamResultDAO();
         int userId = (currentUser != null) ? currentUser.getId() : 1;
         ExamResult result = new ExamResult(userId, exam.getId(), startTime);
         result.setEndTime(LocalDateTime.now());
         result.setScore(score);
         
-        boolean saveResult = examResultDAO.addExamResult(result, userAnswers);
+        boolean saveResult = examResultService.createExamResult(result, userAnswers);
 
         if (saveResult) {
             // Calculate and show detailed results
@@ -867,7 +869,7 @@ public class ExamTakingFrame extends JFrame {
             boolean isCorrect = false;
             if (userAnswer != null && userAnswer.getSelectedOptions() != null) {
                 String userSelection = userAnswer.getSelectedOptions();
-                Question fullQuestion = questionDAO.getQuestionById(question.getId());
+                Question fullQuestion = questionService.getQuestionById(question.getId());
                 List<String> correctOptions = fullQuestion != null ? fullQuestion.getCorrectAnswers() : null;
 
                 if (correctOptions != null && !correctOptions.isEmpty()) {
@@ -914,7 +916,7 @@ public class ExamTakingFrame extends JFrame {
                 String userSelection = userAnswer.getSelectedOptions();
                 
                 // Lấy đáp án đúng từ database
-                Question fullQuestion = questionDAO.getQuestionById(question.getId());
+                Question fullQuestion = questionService.getQuestionById(question.getId());
                 List<String> correctOptions = fullQuestion != null ? fullQuestion.getCorrectAnswers() : null;
                 
                 if (correctOptions != null && !correctOptions.isEmpty()) {
@@ -947,7 +949,7 @@ public class ExamTakingFrame extends JFrame {
         public CircularTimerPanel(int totalTimeInSeconds) {
             this.totalTime = totalTimeInSeconds;
             this.remainingTime = totalTimeInSeconds;
-            setPreferredSize(new Dimension(120, 120));
+            setPreferredSize(new Dimension(80, 80));
             setOpaque(false);
         }
 
@@ -982,12 +984,12 @@ public class ExamTakingFrame extends JFrame {
                 g2d.setColor(new Color(34, 197, 94)); // Green for normal time
             }
 
-            g2d.setStroke(new BasicStroke(8, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            g2d.drawArc(x + 4, y + 4, size - 8, size - 8, 90, arcAngle);
+            g2d.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2d.drawArc(x + 3, y + 3, size - 6, size - 6, 90, arcAngle);
 
             // Time text
             g2d.setColor(Color.BLACK);
-            g2d.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            g2d.setFont(new Font("Segoe UI", Font.BOLD, 14));
             String timeText = String.format("%02d:%02d", remainingTime / 60, remainingTime % 60);
             FontMetrics fm = g2d.getFontMetrics();
             int textX = x + (size - fm.stringWidth(timeText)) / 2;

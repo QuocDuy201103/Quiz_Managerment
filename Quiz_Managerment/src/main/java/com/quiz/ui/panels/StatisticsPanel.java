@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.ExamResultDAO;
+import com.quiz.bus.ExamResultService;
 import com.quiz.model.ExamAttemptStat;
 
 import javax.swing.*;
@@ -12,14 +12,14 @@ import java.util.List;
  * Panel thống kê: biểu đồ số lần làm theo đề thi
  */
 public class StatisticsPanel extends JPanel {
-    private ExamResultDAO examResultDAO;
+    private ExamResultService examResultService;
     private JButton refreshButton;
     private JLabel titleLabel;
     private JScrollPane chartScrollPane;
     private BarChartPanel chartPanel;
 
     public StatisticsPanel() {
-        this.examResultDAO = new ExamResultDAO();
+        this.examResultService = new ExamResultService();
         initializeComponents();
         setupLayout();
         loadDataAndRender();
@@ -54,7 +54,7 @@ public class StatisticsPanel extends JPanel {
     }
 
     private void loadDataAndRender() {
-        List<ExamAttemptStat> stats = examResultDAO.getAttemptCountsPerExam();
+        List<ExamAttemptStat> stats = examResultService.getAttemptCountsPerExam();
         chartPanel.setData(stats);
         chartPanel.revalidate();
         chartPanel.repaint();

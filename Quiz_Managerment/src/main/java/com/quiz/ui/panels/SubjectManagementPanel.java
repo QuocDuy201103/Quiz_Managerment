@@ -1,6 +1,6 @@
 package com.quiz.ui.panels;
 
-import com.quiz.dao.SubjectDAO;
+import com.quiz.bus.SubjectService;
 import com.quiz.model.Subject;
 
 import javax.swing.*;
@@ -21,11 +21,11 @@ public class SubjectManagementPanel extends JPanel {
     private JTextField searchField;
     private JButton addButton, editButton, deleteButton, refreshButton;
     private JScrollPane scrollPane;
-    private SubjectDAO subjectDAO;
+    private SubjectService subjectService;
     private List<Subject> subjects;
 
     public SubjectManagementPanel() {
-        subjectDAO = new SubjectDAO();
+        subjectService = new SubjectService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -138,7 +138,7 @@ public class SubjectManagementPanel extends JPanel {
     }
 
     private void loadSubjects() {
-        subjects = subjectDAO.getAllSubjects();
+        subjects = subjectService.getAllSubjects();
         updateTable();
     }
 
@@ -223,7 +223,7 @@ public class SubjectManagementPanel extends JPanel {
             "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         
         if (option == JOptionPane.YES_OPTION) {
-            if (subjectDAO.deleteSubject(selectedSubject.getId())) {
+            if (subjectService.deleteSubject(selectedSubject.getId())) {
                 JOptionPane.showMessageDialog(this, "Xóa môn học thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadSubjects();
             } else {
@@ -328,12 +328,12 @@ public class SubjectManagementPanel extends JPanel {
             if (subject == null) {
                 // Add new subject
                 Subject newSubject = new Subject(name, description);
-                success = subjectDAO.addSubject(newSubject);
+                success = subjectService.createSubject(newSubject);
             } else {
                 // Update existing subject
                 subject.setName(name);
                 subject.setDescription(description);
-                success = subjectDAO.updateSubject(subject);
+                success = subjectService.updateSubject(subject);
             }
             
             if (success) {

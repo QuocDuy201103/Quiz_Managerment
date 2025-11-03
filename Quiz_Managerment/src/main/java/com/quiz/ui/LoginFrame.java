@@ -1,6 +1,6 @@
 package com.quiz.ui;
 
-import com.quiz.dao.UserDAO;
+import com.quiz.bus.UserService;
 import com.quiz.model.User;
 
 import javax.swing.*;
@@ -15,10 +15,10 @@ public class LoginFrame extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton, goRegisterButton;
-    private UserDAO userDAO;
+    private UserService userService;
 
     public LoginFrame() {
-        userDAO = new UserDAO();
+        userService = new UserService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -45,7 +45,7 @@ public class LoginFrame extends JFrame {
         goRegisterButton.setBackground(Color.WHITE);
         goRegisterButton.setForeground(Color.BLACK);
         goRegisterButton.setFocusPainted(false);
-        goRegisterButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        goRegisterButton.setBorder(null);
         goRegisterButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
@@ -93,7 +93,7 @@ public class LoginFrame extends JFrame {
         goLogin.setBackground(Color.BLACK);
         goLogin.setForeground(Color.WHITE);
         goLogin.setFocusPainted(false);
-        goLogin.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+        goLogin.setBorder(null);
         goLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
         goLogin.addActionListener(e -> performLogin());
 
@@ -235,7 +235,7 @@ public class LoginFrame extends JFrame {
         
         // Thực hiện đăng nhập trong thread riêng
         SwingUtilities.invokeLater(() -> {
-            User user = userDAO.login(username, password);
+            User user = userService.login(username, password);
             
             SwingUtilities.invokeLater(() -> {
                 loginButton.setText("Đăng nhập");

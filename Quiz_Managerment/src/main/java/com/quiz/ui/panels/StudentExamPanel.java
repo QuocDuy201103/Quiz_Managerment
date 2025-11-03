@@ -156,7 +156,7 @@ public class StudentExamPanel extends JPanel {
                 exam.getTitle(),
                 exam.getSubject() != null ? exam.getSubject().getName() : "N/A",
                 exam.getQuestionCount(),
-                exam.getCreatedAt().toString().substring(0, 19)
+                exam.getCreatedAt().toString().substring(0, 19).replace("T", " ")
             };
             tableModel.addRow(row);
         }

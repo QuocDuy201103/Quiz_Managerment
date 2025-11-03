@@ -1,6 +1,6 @@
 package com.quiz.ui;
 
-import com.quiz.dao.UserDAO;
+import com.quiz.bus.UserService;
 import com.quiz.model.Role;
 import com.quiz.model.User;
 
@@ -18,10 +18,10 @@ public class RegisterFrame extends JFrame {
     private JPasswordField passwordField, confirmPasswordField;
     private JComboBox<Role> roleComboBox;
     private JButton registerButton, cancelButton, goLoginButton;
-    private UserDAO userDAO;
+    private UserService userService;
 
     public RegisterFrame() {
-        userDAO = new UserDAO();
+        userService = new UserService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -110,7 +110,7 @@ public class RegisterFrame extends JFrame {
         goLoginButton.setBackground(Color.BLACK);
         goLoginButton.setForeground(Color.WHITE);
         goLoginButton.setFocusPainted(false);
-        goLoginButton.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+        goLoginButton.setBorder(null);
         goLoginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
@@ -288,13 +288,13 @@ public class RegisterFrame extends JFrame {
         }
         
         // Kiểm tra username và email đã tồn tại chưa
-        if (userDAO.isUsernameExists(username)) {
+        if (userService.isUsernameExists(username)) {
             showValidationError("Tên đăng nhập đã tồn tại! Vui lòng chọn tên khác.");
             usernameField.requestFocus();
             return;
         }
         
-        if (userDAO.isEmailExists(email)) {
+        if (userService.isEmailExists(email)) {
             showValidationError("Email đã tồn tại! Vui lòng sử dụng email khác.");
             emailField.requestFocus();
             return;
@@ -307,7 +307,7 @@ public class RegisterFrame extends JFrame {
         // Thực hiện đăng ký trong thread riêng
         SwingUtilities.invokeLater(() -> {
             User newUser = new User(username, password, email, selectedRole.getId());
-            boolean success = userDAO.addUser(newUser);
+            boolean success = userService.createUser(newUser);
             
             SwingUtilities.invokeLater(() -> {
                 registerButton.setText("Đăng ký");
@@ -349,23 +349,22 @@ public class RegisterFrame extends JFrame {
 
     private void loadRoles() {
         try {
-            List<Role> roles = userDAO.getAllRoles();
+            List<Role> roles = userService.getAllRoles();
             for (Role role : roles) {
-                // Chỉ hiển thị teacher và student, không hiển thị admin
-                if (role.getId() != 0) { // 0 = admin
+                // Chỉ hiển thị student (id = 2), bỏ teacher và admin
+                if (role.getId() == 2) { // 2 = student
                     roleComboBox.addItem(role);
+                    break; // Chỉ cần tìm thấy student là đủ
                 }
             }
             
-            // Nếu không có roles nào, thêm fallback
+            // Nếu không có roles nào, thêm fallback chỉ student
             if (roleComboBox.getItemCount() == 0) {
-                roleComboBox.addItem(new Role(1, "teacher"));
                 roleComboBox.addItem(new Role(2, "student"));
             }
         } catch (Exception e) {
             System.err.println("Lỗi load roles: " + e.getMessage());
-            // Fallback nếu có lỗi
-            roleComboBox.addItem(new Role(1, "teacher"));
+            // Fallback nếu có lỗi - chỉ student
             roleComboBox.addItem(new Role(2, "student"));
         }
     }
